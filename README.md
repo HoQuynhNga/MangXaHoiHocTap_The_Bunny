@@ -1,6 +1,7 @@
 # 🐰 The Bunny - Mạng Xã Hội Học Tập
 
 Dự án thiết kế website mạng xã hội dành cho sinh viên - Môn học: Phát triển ứng dụng Web.
+
 Giảng viên hướng dẫn: TS. Đặng Ngọc Hoàng Thành
 
 ---
