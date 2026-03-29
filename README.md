@@ -23,7 +23,7 @@ Giảng viên hướng dẫn: TS. Đặng Ngọc Hoàng Thành
 |:---:|:---|:---:|:---:|:---|
 | 1 | **Nguyễn Tiến Anh** | 31231021117 | [@github_username](https://github.com/link_profile) | Thành viên |
 | 2 | **Lê Viết Bảo** | 31231025973 | [@github_username](https://github.com/link_profile) | Thành viên |
-| 3 | **Bùi Tấn Đạt** | 31221025667 | [@github_username](https://github.com/link_profile) | Thành viên |
+| 3 | **Bùi Tấn Đạt** | 31221025667 | [@BuiTanDat](https://github.com/datbt76) | Thành viên |
 | 4 | **Hồ Quỳnh Nga** | 31221024250 | [@HoQuynhNga](https://github.com/HoQuynhNga) | Thành viên |
 
 ---
