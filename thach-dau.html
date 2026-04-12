@@ -1,1 +1,319 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luyện tập bài học - The Bunny</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
 
+    <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
+        <div class="d-flex align-items-center gap-4">
+            <a href="trang-chu.html" class="brand-logo text-decoration-none"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
+            
+            <div class="search-bar d-none d-md-flex">
+                <i class="fa-solid fa-search text-muted"></i>
+                <input type="text" placeholder="Tìm kiếm tài liệu, bạn học..." />
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <a href="thach-dau.html" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
+                <i class="fa-solid fa-khanda"></i>
+            </a>
+            
+            <a href="tin-nhan.html" class="btn-icon text-decoration-none" title="Tin nhắn">
+                <i class="fa-brands fa-facebook-messenger"></i>
+            </a>
+            
+            <a href="notifications.html" class="btn-icon text-decoration-none" title="Thông báo">
+                <i class="fa-solid fa-bell"></i>
+            </a>
+            
+            <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border d-none d-md-flex">
+                <i class="fa-solid fa-fire text-danger"></i>
+                <span class="fw-bold fs-6">15</span>
+            </div>
+            
+            <a href="trang-ca-nhan.html">
+                <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border cursor-pointer" width="40" height="40" alt="Profile">
+            </a>
+        </div>
+    </nav>
+
+    <div class="room-toolbar">
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <span class="fw-bold text-dark d-none d-sm-inline"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Phòng Practice #102</span>
+            
+            <button class="btn btn-light border fw-bold text-dark d-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#problemListCanvas">
+                <i class="fa-solid fa-list-ul text-primary"></i> 
+                <span class="d-none d-sm-inline">Danh sách bài tập</span>
+            </button>
+        </div>
+
+        <div class="d-flex align-items-center gap-3 mt-2 mt-md-0">
+            <div class="d-flex align-items-center gap-2 border-end pe-3 d-none d-lg-flex">
+                <span class="small fw-bold text-muted">Đang tham gia:</span>
+                <div class="avatar-group d-flex">
+                    <img src="https://i.pravatar.cc/150?img=12" title="Alex (Bạn)" style="z-index: 3;">
+                    <img src="https://i.pravatar.cc/150?img=5" title="Minh Tuấn" style="z-index: 2;">
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-light fw-bold border text-dark" data-bs-toggle="modal" data-bs-target="#inviteModal">
+                    <i class="fa-solid fa-user-plus me-1"></i><span class="d-none d-sm-inline"> Mời bạn</span>
+                </button>
+                <button class="btn btn-bunny" data-bs-toggle="modal" data-bs-target="#battleModal">
+                    <i class="fa-solid fa-bolt text-warning me-1"></i><span class="d-none d-sm-inline"> Thách đấu</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <main class="container-fluid flex-grow-1 p-3 overflow-hidden d-flex flex-column" id="main-workspace">
+        <div class="row g-3 h-100 flex-nowrap flex-lg-wrap">
+            
+            <div class="col-lg-6 h-100 mobile-stack-pane">
+                <div class="bg-white rounded-4 border shadow-sm d-flex flex-column h-100 overflow-hidden">
+                    
+                    <div class="pane-header d-flex align-items-center px-3 gap-3">
+                        <div class="pane-tab active"><i class="fa-regular fa-file-lines me-2"></i>Đề bài</div>
+                        <div class="pane-tab"><i class="fa-regular fa-comments me-2"></i>Thảo luận (12)</div>
+                    </div>
+                    
+                    <div class="pane-content">
+                        <h3 class="fw-bold mb-3">1. Phân tích chi tiết tác phẩm Les Misérables</h3>
+                        
+                        <div class="d-flex gap-2 mb-4 flex-wrap">
+                            <span class="badge bg-success bg-opacity-10 text-success py-2 px-3 rounded-pill">Mức độ: Dễ</span>
+                            <span class="badge bg-light text-dark border py-2 px-3 rounded-pill"><i class="fa-solid fa-tag me-1 text-muted"></i> Văn học phương Tây</span>
+                        </div>
+
+                        <p>Dựa vào kiến thức nền tảng trong quá trình học tập dự án, hãy đọc đoạn bối cảnh sau và chọn ra đáp án chính xác nhất.</p>
+                        
+                        <div class="reading-context">
+                            <p class="m-0"><strong>Trích dẫn bối cảnh:</strong><br>
+                            Tác phẩm <em>Những người khốn khổ</em> của Victor Hugo khắc họa chân thực bức tranh xã hội Pháp thế kỷ 19. Nhiều học sinh khi phân tích nhân vật thường nhầm lẫn về mức án và lý do vào tù của các nhân vật. Một số bài luận nhầm lẫn rằng người mẹ nghèo là người phải trải qua kiếp tù đày khổ sai thay vì người thực sự thụ án do ăn cắp bánh mì.</p>
+                        </div>
+
+                        <div class="bg-light p-4 rounded d-flex justify-content-center align-items-center mb-2">
+                            <i class="fa-solid fa-book-journal-whills text-secondary" style="font-size: 56px;"></i>
+                        </div>
+                        <p class="text-center text-muted small fw-bold mb-4">Hình 1: Biểu tượng văn học Pháp thế kỷ 19</p>
+
+                        <p class="fw-bold text-danger"><i class="fa-solid fa-circle-exclamation me-2"></i>Yêu cầu: Chỉ ra sự thật về bản án trong tác phẩm.</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="col-lg-6 h-100 mobile-stack-pane">
+                <div class="rounded-4 border shadow-sm d-flex flex-column h-100 overflow-hidden" style="background-color: var(--bg-editor);">
+                    
+                    <div class="pane-header bg-white d-flex align-items-center px-3 gap-3">
+                        <div class="pane-tab active"><i class="fa-solid fa-pen-to-square me-2"></i>Trả lời</div>
+                        <div class="pane-tab"><i class="fa-solid fa-file-pen me-2"></i>Giấy nháp chung</div>
+                        <div class="ms-auto">
+                            <button class="btn btn-sm btn-success fw-bold px-3"><i class="fa-solid fa-check me-1"></i> Gửi đáp án</button>
+                        </div>
+                    </div>
+                    
+                    <div class="pane-content position-relative">
+                        <h6 class="fw-bold mb-4 text-dark lh-base">Câu hỏi: Ai là người thực sự phải chịu án tù khổ sai 19 năm trong tác phẩm?</h6>
+                        
+                        <div class="mcq-option" onclick="selectOption(this)">
+                            <div class="option-letter">A</div>
+                            <div class="fw-medium">Người mẹ nghèo Fantine</div>
+                        </div>
+                        
+                        <div class="mcq-option" onclick="selectOption(this)">
+                            <div class="option-letter">B</div>
+                            <div class="fw-medium">Jean Valjean (vì ăn cắp một chiếc bánh mì và vượt ngục)</div>
+                        </div>
+                        
+                        <div class="mcq-option" onclick="selectOption(this)">
+                            <div class="option-letter">C</div>
+                            <div class="fw-medium">Thanh tra Javert</div>
+                        </div>
+                        
+                        <div class="mcq-option" onclick="selectOption(this)">
+                            <div class="option-letter">D</div>
+                            <div class="fw-medium">Gavroche</div>
+                        </div>
+
+                        <div class="co-learning-indicator d-flex justify-content-between align-items-center mt-5">
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="24" height="24">
+                                <span><b>Minh Tuấn</b> đang chọn đáp án...</span>
+                            </div>
+                            <div class="spinner-grow spinner-grow-sm text-primary" role="status"></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <div class="offcanvas offcanvas-start border-0 shadow-lg rounded-end-4" tabindex="-1" id="problemListCanvas" style="width: 340px;">
+        
+        <div class="offcanvas-header border-bottom bg-light bg-opacity-50">
+            <h5 class="offcanvas-title fw-bold text-dark d-flex align-items-center gap-2">
+                <i class="fa-solid fa-layer-group text-primary"></i> Kho tài liệu
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+        </div>
+        
+        <div class="offcanvas-body p-0 d-flex flex-column">
+            <div class="p-3 border-bottom">
+                <div class="search-bar w-100 bg-light border">
+                    <i class="fa-solid fa-search text-muted"></i>
+                    <input type="text" placeholder="Tìm tên bài, ID hoặc #tag..." class="bg-transparent border-0 outline-0 w-100">
+                </div>
+            </div>
+
+            <div class="accordion accordion-flush flex-grow-1 overflow-auto" id="categoryAccordion">
+                
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#cat-vanhoc">
+                            <i class="fa-solid fa-book-open text-primary me-2"></i> Văn học (12)
+                        </button>
+                    </h2>
+                    <div id="cat-vanhoc" class="accordion-collapse collapse show" data-bs-parent="#categoryAccordion">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action active bg-primary bg-opacity-10 text-primary border-0 fw-bold border-start border-4 border-primary px-4">
+                                1. Phân tích Les Misérables
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium hover-bg-light">
+                                2. Thông điệp Chinh phụ ngâm
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium hover-bg-light">
+                                3. Nghệ thuật vị nhân sinh
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#cat-vatly">
+                            <i class="fa-solid fa-atom text-success me-2"></i> Vật Lý 9 (45)
+                        </button>
+                    </h2>
+                    <div id="cat-vatly" class="accordion-collapse collapse" data-bs-parent="#categoryAccordion">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium d-flex justify-content-between align-items-center">
+                                <span>1. Điện từ học (Cơ bản)</span>
+                                <i class="fa-solid fa-circle-check text-success small"></i>
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium">
+                                2. Bài tập Quang học
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium d-flex justify-content-between align-items-center">
+                                <span>3. Đề thi thử HK2</span>
+                                <i class="fa-solid fa-lock text-warning small"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="accordion-item border-bottom">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#cat-kinhdoanh">
+                            <i class="fa-solid fa-chart-line text-warning me-2"></i> Kinh doanh (8)
+                        </button>
+                    </h2>
+                    <div id="cat-kinhdoanh" class="accordion-collapse collapse" data-bs-parent="#categoryAccordion">
+                        <div class="list-group list-group-flush">
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium">
+                                1. Bài toán CLV
+                            </a>
+                            <a href="#" class="list-group-item list-group-item-action border-0 text-muted px-4 fw-medium">
+                                2. Tối ưu Hybrid B2C & C2C
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="inviteModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-user-plus text-primary me-2"></i>Mời bạn vào phòng Practice</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <div class="p-3 border-bottom">
+                        <input type="text" class="form-control bg-light border-0" placeholder="Tìm kiếm tên bạn bè...">
+                    </div>
+                    <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0">
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="https://i.pravatar.cc/150?img=9" class="rounded-circle" width="40">
+                                <div>
+                                    <h6 class="m-0 fw-bold">Hoàng Oanh</h6>
+                                    <small class="text-success"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Đang online</small>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3">Mời</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="battleModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-warning border border-2 rounded-4">
+                <div class="modal-header bg-warning bg-opacity-10 border-warning">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-bolt text-warning me-2"></i>Tạo Thách Đấu Trực Tiếp</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted small mb-4">Biến phòng luyện tập này thành sàn đấu gay cấn. 10 câu hỏi theo danh mục hiện tại.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Đối thủ (Trong phòng)</label>
+                        <select class="form-select bg-light border-0 fw-bold">
+                            <option value="all">Thách đấu tất cả mọi người</option>
+                            <option value="1">Lê Minh Tuấn</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-3 m-0 rounded-3">
+                        <i class="fa-solid fa-circle-info mt-1 text-info"></i>
+                        <small class="text-dark fw-medium">Khi bắt đầu, đồng hồ sẽ đếm ngược 15 phút. Người nộp bài đúng và nhanh nhất sẽ giành toàn bộ Cà rốt.</small>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light fw-bold rounded-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning fw-bold px-4 rounded-3" onclick="startBattle()">Chiến luôn <i class="fa-solid fa-fire text-danger ms-1"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+        <div id="systemToast" class="toast align-items-center text-bg-dark border-0 rounded-3" role="alert">
+            <div class="d-flex">
+                <div class="toast-body fw-bold" id="toastMessage"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="./js/thach-dau.js"></script>
+</body>
+</html>
