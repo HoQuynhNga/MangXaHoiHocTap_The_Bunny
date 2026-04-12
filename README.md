@@ -1,35 +1,88 @@
-# 🐰 The Bunny - Mạng Xã Hội Học Tập
+Open Source Social Network [3.x] 
+======================================
 
-Dự án thiết kế website mạng xã hội dành cho sinh viên - Môn học: Phát triển ứng dụng Web.
+Opensource-Socialnetwork (OSSN) is a social networking software written in PHP. It allows you to make a social networking website and helps your members build social relationships, with people who share similar professional or personal interests.
 
-Giảng viên hướng dẫn: TS. Đặng Ngọc Hoàng Thành
+OSSN is released under the GNU General Public License (GPL) Version 2
 
----
+Languages
+==========
+* English
+* German
 
-## 📝 Giới thiệu dự án
-**The Bunny** là nền tảng mạng xã hội chuyên biệt giúp sinh viên trong cùng trường đại học kết nối, hỗ trợ lẫn nhau trong quá trình học tập. Website kết hợp giữa mô hình mạng xã hội hiện đại và diễn đàn thảo luận truyền thống.
+Front-End Features
+===================
+* User Registration
+* User Login
+* Profile 
+* Profile Photo
+* Profile Cover
+* Add/Remove Friends
+* Live Chat
+* Wall posts
+* Photos
+* Ads
+* Groups
+* Tag friends in posts
+* User block system
+* User poke system
+* Ajax Comments
+* Ajax Likes
+* Ajax Photos in comments
+* Group cover photos
+* Repostion Profile/Group cover
+* Notifications
+* Friend Requests
+* Chat Bar
+* Invite Friends
+* Embed Videos
+* Smilies
+* SitePages (terms, privacy, about)
+* Site Search
+* Reset Password
+* Newsfeed page
 
-### ✨ Tính năng chính (Dự kiến)
-* **Nhóm học tập:** Tạo và tham gia các nhóm theo chuyên ngành hoặc sở thích.
-* **Kho tài liệu:** Đăng tải, tìm kiếm và chia sẻ tài liệu ôn thi theo từng môn học/mã học phần.
-* **Thảo luận:** Hệ thống bài đăng và bình luận giúp giải đáp thắc mắc bài tập nhanh chóng.
-* **Thông báo:** Cập nhật tin tức mới nhất từ các nhóm và môn học đang theo dõi.
+Backend Features
+=================
 
----
+* Admin Dashboard for site overview
+* Online users count (male/female) graph
+* Total site users count (by months) graph
+* Update Notification
+* Add User
+* Remove User
+* Edit User
+* Ads Manager
+* Site Cache Settings
+* Site Basic Settings
+* Unvalidated users
+* Manually validate unvalidated users
+* and much more components settings
 
-## 👥 Danh sách thành viên nhóm
+Prerequisite
+=============
+* PHP 5.4, 5.5, 5.6
+* MYSQL 5 OR >
+* APACHE
+* MOD_REWRITE
+* PHP Function cURL
+* PHP GD Library
+* PHP ZIP Extension
+* PHP settings allow_url_fopen enabled
+* JSON Support
+* XML
 
-| STT | Họ và Tên | Mã số sinh viên | Tài khoản GitHub | Vai trò |
-|:---:|:---|:---:|:---:|:---|
-| 1 | **Nguyễn Tiến Anh** | 31231021117 | [@github_username](https://github.com/link_profile) | Thành viên |
-| 2 | **Lê Viết Bảo** | 31231025973 | [@github_username](https://github.com/link_profile) | Thành viên |
-| 3 | **Bùi Tấn Đạt** | 31221025667 | [@github_username](https://github.com/link_profile) | Thành viên |
-| 4 | **Hồ Quỳnh Nga** | 31221024250 | [@HoQuynhNga](https://github.com/HoQuynhNga) | Thành viên |
+Installation
+============
+http://docs.opensource-socialnetwork.org/index.php/How_To_Install_Open_Source_Social_Network
 
----
+DEMO
+====
+https://www.opensource-socialnetwork.org/demo/
 
-## 🛠 Công nghệ sử dụng
-* **Frontend:** ReactJS
-* **Backend:** Node.js 
-* **Database:** SQL Server
-* **Version Control:** Git & GitHub
+UPGRADE
+========
+http://docs.opensource-socialnetwork.org/index.php/How_To_Upgrade_Ossn
+
+Having problem? Contact us www.informatikon.com/contact/support
+Copyright 2014-2015 Informatikon Technologies (informatikon.com)
