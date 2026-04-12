@@ -10,9 +10,9 @@ Giảng viên hướng dẫn: TS. Đặng Ngọc Hoàng Thành
 **The Bunny** là nền tảng mạng xã hội chuyên biệt giúp sinh viên trong cùng trường đại học kết nối, hỗ trợ lẫn nhau trong quá trình học tập. Website kết hợp giữa mô hình mạng xã hội hiện đại và diễn đàn thảo luận truyền thống.
 
 ### ✨ Tính năng chính (Dự kiến)
-* **Nhóm học tập:** Tạo và tham gia các nhóm theo chuyên ngành hoặc sở thích.
-* **Kho tài liệu:** Đăng tải, tìm kiếm và chia sẻ tài liệu ôn thi theo từng môn học/mã học phần.
-* **Thảo luận:** Hệ thống bài đăng và bình luận giúp giải đáp thắc mắc bài tập nhanh chóng.
+* **Thách đấu học tập:** Tạo và tham gia các nhóm theo chuyên ngành hoặc sở thích.
+* **Tin nhắn cộng đồng:** Đăng tải, tìm kiếm và chia sẻ tài liệu ôn thi theo từng môn học/mã học phần, chia sẻ nhắn tin với các bạn.
+* **Nhóm học tập:** Tạo và tham gia các nhóm theo chuyên ngành hoặc sở thích. Hệ thống bài đăng và bình luận giúp giải đáp thắc mắc bài tập nhanh chóng.
 * **Thông báo:** Cập nhật tin tức mới nhất từ các nhóm và môn học đang theo dõi.
 
 ---
