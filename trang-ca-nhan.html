@@ -1,1 +1,603 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alex Nguyễn - The Bunny Profile</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
 
+    <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
+        <div class="d-flex align-items-center gap-4">
+            <a href="trang-chu.html" class="brand-logo text-decoration-none"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
+            
+            <div class="search-bar d-none d-md-flex">
+                <i class="fa-solid fa-search text-muted"></i>
+                <input type="text" placeholder="Tìm kiếm tài liệu, bạn học..." />
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-3">
+            <a href="thach-dau.html" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
+                <i class="fa-solid fa-khanda"></i>
+            </a>
+            
+            <a href="tin-nhan.html" class="btn-icon text-decoration-none" title="Tin nhắn">
+                <i class="fa-brands fa-facebook-messenger"></i>
+            </a>
+            
+            <a href="notifications.html" class="btn-icon text-decoration-none" title="Thông báo">
+                <i class="fa-solid fa-bell"></i>
+            </a>
+            
+            <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border d-none d-md-flex">
+                <i class="fa-solid fa-fire text-danger"></i>
+                <span class="fw-bold fs-6">15</span>
+            </div>
+            
+            <a href="trang-ca-nhan.html">
+                <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border cursor-pointer" width="40" height="40" alt="Profile">
+            </a>
+        </div>
+    </nav>
+
+    <div class="offcanvas offcanvas-start offcanvas-bunny" tabindex="-1" id="mobileOffcanvas" aria-labelledby="mobileOffcanvasLabel">
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold m-0 d-flex align-items-center gap-2" id="mobileOffcanvasLabel" style="color: var(--bunny-primary);">
+                <i class="fa-solid fa-carrot"></i> The Bunny
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-3">
+            <div class="search-bar w-100 mb-4 d-flex">
+                <i class="fa-solid fa-search text-muted"></i>
+                <input type="text" placeholder="Tìm kiếm...">
+            </div>
+            
+            <h6 class="text-muted fw-bold small text-uppercase mb-3 px-3">Menu</h6>
+            <div class="d-flex flex-column gap-1 mb-4">
+                <button class="nav-link-custom active"><i class="fa-solid fa-house w-20px"></i> Bảng tin</button>
+                <button class="nav-link-custom"><i class="fa-solid fa-user-group w-20px"></i> Nhóm học tập</button>
+                <button class="nav-link-custom"><i class="fa-solid fa-khanda w-20px"></i> Thách đấu</button>
+                <button class="nav-link-custom"><i class="fa-solid fa-bell w-20px"></i> Thông báo</button>
+                <button class="nav-link-custom"><i class="fa-brands fa-facebook-messenger w-20px"></i> Tin nhắn</button>
+            </div>
+            
+            <h6 class="text-muted fw-bold small text-uppercase mb-3 px-3">Cá nhân</h6>
+            <div class="d-flex flex-column gap-1">
+                <button class="nav-link-custom"><i class="fa-solid fa-bookmark w-20px"></i> Đã lưu</button>
+                <button class="nav-link-custom"><i class="fa-solid fa-gear w-20px"></i> Cài đặt</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cover-block mt-md-3 animate-slide-up">
+        <div class="w-100 h-100 d-flex justify-content-center align-items-center text-white" style="background: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80') center/cover;">
+        </div>
+        <button class="btn-edit-cover"><i class="fa-solid fa-camera me-2 d-none d-sm-inline"></i>Sửa bìa</button>
+    </div>
+
+    <div class="info-block animate-slide-up" style="animation-delay: 0.1s;">
+        
+        <div class="profile-layout">
+            <div class="avatar-container">
+                <img src="https://i.pravatar.cc/150?img=12" alt="Alex Nguyễn" class="avatar-img">
+                <div class="status-badge" title="Đang học bài"></div>
+            </div>
+            
+            <div class="info-content w-100">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-start">
+                    <div class="text-center text-md-start">
+                        <div class="profile-name-wrapper">
+                            <h1 class="profile-name">Alex Nguyễn</h1>
+                            <i class="fa-solid fa-circle-check verified-tick" title="Học sinh xác thực"></i>
+                        </div>
+                        <p class="text-muted fw-medium fs-5 m-0 mb-3 mb-md-0">Định hướng UI/UX & Kinh doanh (Babe Nobuli)</p>
+                        
+                        <div class="profile-stats">
+                            <div class="stat-item">
+                                <span class="stat-value">1,520</span>
+                                <span class="stat-label">Cà rốt (XP)</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">124</span>
+                                <span class="stat-label">Bạn cùng tiến</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-value">45</span>
+                                <span class="stat-label">Tài liệu</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons mt-4 mt-md-0">
+                        <button class="btn btn-primary-bunny" onclick="triggerChallenge()"><i class="fa-solid fa-khanda me-2"></i>Thách đấu</button>
+                        <button class="btn btn-light fw-bold border"><i class="fa-solid fa-user-plus me-2 d-none d-sm-inline"></i>Thêm bạn</button>
+                        <button class="btn btn-light fw-bold border px-3"><i class="fa-solid fa-ellipsis"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ul class="nav profile-tabs" id="myTab" role="tablist">
+            <li class="nav-item"><button class="nav-link-custom active" data-bs-toggle="tab" data-bs-target="#timeline">Dòng thời gian</button></li>
+            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#about">Giới thiệu</button></li>
+            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#buddies">Bạn cùng tiến</button></li>
+            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#library">Tài liệu</button></li>
+            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#events">Sự kiện</button></li>
+            <li class="nav-item"><button class="nav-link-custom text-warning" data-bs-toggle="tab" data-bs-target="#battles"><i class="fa-solid fa-trophy me-1"></i> Sàn đấu</button></li>
+        </ul>
+    </div>
+
+    <div class="container max-w-1100 mx-auto mt-4 pb-5">
+        <div class="tab-content" id="myTabContent">
+            
+            <div class="tab-pane fade show active" id="timeline">
+                <div class="row g-4">
+                    
+                    <div class="col-lg-5">
+                        
+                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.2s;">
+                            <h5 class="fw-bold mb-3">Giới thiệu</h5>
+                            <p class="text-center fst-italic mb-3 text-muted">"Kiến thức là nền tảng, thiết kế là giải pháp."</p>
+                            
+                            <ul class="list-unstyled d-flex flex-column gap-3 mb-4 small">
+                                <li class="d-flex align-items-center gap-3">
+                                    <i class="fa-solid fa-graduation-cap text-muted fs-5 w-20px"></i>
+                                    <span>Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý</span>
+                                </li>
+                                <li class="d-flex align-items-center gap-3">
+                                    <i class="fa-solid fa-briefcase text-muted fs-5 w-20px"></i>
+                                    <span>Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b></span>
+                                </li>
+                                <li class="d-flex align-items-center gap-3">
+                                    <i class="fa-solid fa-location-dot text-muted fs-5 w-20px"></i>
+                                    <span>Sống tại <b>TP. Hồ Chí Minh</b></span>
+                                </li>
+                            </ul>
+                            
+                            <h6 class="fw-bold text-uppercase small text-muted mb-2">Từ khóa quan tâm</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="tag-badge">#VậtLý9</span>
+                                <span class="tag-badge">#Figma</span>
+                                <span class="tag-badge">#B2C_C2C</span>
+                            </div>
+                        </div>
+
+                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold m-0">Nhật ký học tập</h5>
+                                <span class="badge bg-light text-dark border">30 ngày qua</span>
+                            </div>
+                            <div class="heatmap-wrapper">
+                                <div class="heatmap-container" id="heatmap-grid">
+                                    </div>
+                            </div>
+                            <div class="d-flex justify-content-end align-items-center gap-2 mt-3 small text-muted px-2">
+                                <span>Ít</span>
+                                <div class="heat-cell h-auto w-20px"></div>
+                                <div class="heat-cell heat-lvl-1 h-auto w-20px"></div>
+                                <div class="heat-cell heat-lvl-2 h-auto w-20px"></div>
+                                <div class="heat-cell heat-lvl-3 h-auto w-20px"></div>
+                                <span>Nhiều</span>
+                            </div>
+                        </div>
+
+                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.4s;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold m-0">Sự kiện sắp tới</h5>
+                                <a href="#" class="text-primary text-decoration-none small fw-bold" onclick="document.querySelector('[data-bs-target=\'#events\']').click(); return false;">Xem tất cả</a>
+                            </div>
+                            
+                            <div class="d-flex flex-column gap-3">
+                                <div class="event-mini">
+                                    <div class="event-date-box">
+                                        <span class="fs-7 fw-bold text-uppercase">Th4</span>
+                                        <span class="fs-4 fw-bold lh-1">15</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-1 text-truncate">Họp vận hành Babe Nobuli</h6>
+                                        <p class="text-muted small m-0"><i class="fa-regular fa-clock me-1"></i> 20:00 - Google Meet</p>
+                                    </div>
+                                    
+                                </div>
+                                <div class="event-mini">
+                                    <div class="event-date-box" style="background: #FFFBEB; color: #D97706;">
+                                        <span class="fs-7 fw-bold text-uppercase">Th4</span>
+                                        <span class="fs-4 fw-bold lh-1">18</span>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold mb-1 text-truncate">Thi thử Vật Lý 9 HK2</h6>
+                                        <p class="text-muted small m-0"><i class="fa-solid fa-location-dot me-1"></i> Phòng Thi Ảo 01</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-7">
+                        
+                        <div class="challenge-banner mb-4 animate-slide-up" style="animation-delay: 0.2s;">
+                            <i class="fa-solid fa-bolt challenge-icon"></i>
+                            <div class="d-flex justify-content-between align-items-center position-relative z-1">
+                                <div>
+                                    <span class="badge bg-warning text-dark mb-2"><i class="fa-solid fa-circle-dot text-danger fa-fade me-1"></i> Đang trực tiếp</span>
+                                    <h5 class="fw-bold m-0 text-dark">Trận chiến: 50 Câu trắc nghiệm Vật Lý</h5>
+                                    <p class="small text-dark m-0 mt-1 d-flex justify-content-center justify-content-md-start align-items-center gap-2">Đối thủ: <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="20"> <b>Lê Minh Tuấn</b></p>
+                                </div>
+                                <div class="text-end">
+                                    <h3 class="fw-bold text-danger m-0 mb-1">38 - 42</h3>
+                                    <button class="btn btn-dark btn-sm rounded-pill px-3 fw-bold">Vào xem <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
+                            <div class="post-composer mb-3">
+                                <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="44" height="44">
+                                <input type="text" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
+                            </div>
+                            <div class="d-flex justify-content-between border-top pt-3">
+                                <button class="btn-action flex-fill"><i class="fa-solid fa-file-pdf text-danger"></i> <span>Đính Note</span></button>
+                                <button class="btn-action flex-fill"><i class="fa-solid fa-pen-ruler text-success"></i> <span>Code/Thiết kế</span></button>
+                                <button class="btn-action flex-fill"><i class="fa-solid fa-flag text-warning"></i> <span>Mục tiêu</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.4s;">
+                            <div class="post-header">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="48" height="48">
+                                    <div>
+                                        <h6 class="fw-bold m-0 d-flex align-items-center gap-1">Alex Nguyễn <i class="fa-solid fa-circle-check text-primary fs-6"></i></h6>
+                                        <span class="text-muted small">2 giờ trước · <i class="fa-solid fa-earth-americas"></i></span>
+                                    </div>
+                                </div>
+                                <button class="btn btn-light rounded-circle p-2"><i class="fa-solid fa-ellipsis"></i></button>
+                            </div>
+                            
+                            <div class="post-body">
+                                <p>Hoàn tất mô hình tài chính và luồng vận hành cho nền tảng <b>Babe Nobuli</b>. 🚀</p>
+                                <p>Quyết định tập trung hoàn toàn vào cấu trúc <b>Hybrid B2C và C2C</b>. Ở pha này, nhóm 3 tụi mình lược bỏ bớt các mô tả công nghệ rườm rà để tập trung giải quyết bài toán: Dòng chảy hàng hóa (Operational flow) và Tối ưu giá trị vòng đời khách hàng (CLV). <br><br>Mọi người vào file Figma check lại luồng mua hàng và kiểm kho giúp mình nhé!</p>
+                            </div>
+                            
+                            <div class="post-attachment">
+                                <div class="bg-white p-3 rounded-circle shadow-sm">
+                                    <i class="fa-brands fa-figma text-purple" style="font-size: 32px;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold mb-1">BabeNobuli_Flow_Final.fig</h6>
+                                    <p class="text-muted small m-0">Figma Prototype · Cập nhật 2 giờ trước</p>
+                                </div>
+                                <button class="btn btn-outline-primary fw-bold rounded-pill">Xem thiết kế</button>
+                            </div>
+
+                            <div class="post-footer">
+                                <div class="d-flex justify-content-between text-muted small mb-2 px-1">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="fa-solid fa-carrot text-warning bg-light p-1 rounded-circle"></i>
+                                        <i class="fa-solid fa-thumbs-up text-primary bg-light p-1 rounded-circle"></i>
+                                        <span class="ms-1 fw-bold">124</span>
+                                    </div>
+                                    <div>18 Bình luận</div>
+                                </div>
+                                <div class="reaction-bar">
+                                    <button class="btn-action flex-fill"><i class="fa-regular fa-thumbs-up"></i> <span>Hữu ích</span></button>
+                                    <button class="btn-action flex-fill"><i class="fa-regular fa-comment"></i> <span>Bình luận</span></button>
+                                    <button class="btn-action flex-fill"><i class="fa-solid fa-share"></i> <span>Chia sẻ</span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.5s;">
+                            <div class="post-header">
+                                <div class="d-flex gap-3 align-items-center">
+                                    <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="48" height="48">
+                                    <div>
+                                        <h6 class="fw-bold m-0">Alex Nguyễn</h6>
+                                        <span class="text-muted small">Hôm qua lúc 20:30 · <i class="fa-solid fa-user-group"></i> Nhóm Yêu Văn Học</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="post-body">
+                                <p><b>Góc đính chính Văn học:</b> 📖</p>
+                                <p>Dạo quanh diễn đàn thấy nhiều bạn làm bài phân tích tác phẩm "Những người khốn khổ" (Les Misérables) hay bị nhầm lẫn một chi tiết rất quan trọng. Mọi người hay viết là người mẹ nghèo Fantine phải trải qua kiếp tù đày. Thực ra không phải nhé!</p>
+                                <p>Người mẹ nghèo Fantine không có liên quan gì đến việc đi tù cả. Nhân vật thụ án tù khổ sai chính là <b>Jean Valjean</b> (vì ăn cắp một chiếc bánh mì cho cháu). Chúc các bạn viết bài luận không bị trừ điểm oan chỗ này nha! 😉</p>
+                                <div class="d-flex gap-2 mt-3 flex-wrap">
+                                    <span class="tag-badge text-primary bg-primary bg-opacity-10">#VanHocNuocNgoai</span>
+                                    <span class="tag-badge text-primary bg-primary bg-opacity-10">#LesMiserables</span>
+                                </div>
+                            </div>
+
+                            <div class="post-footer">
+                                <div class="d-flex justify-content-between text-muted small mb-2 px-1">
+                                    <div class="d-flex align-items-center gap-1">
+                                        <i class="fa-solid fa-lightbulb text-warning bg-light p-1 rounded-circle"></i>
+                                        <span class="ms-1 fw-bold">256</span>
+                                    </div>
+                                    <div>42 Thảo luận</div>
+                                </div>
+                                <div class="reaction-bar">
+                                    <button class="btn-action flex-fill text-warning bg-warning bg-opacity-10"><i class="fa-solid fa-lightbulb"></i> <span>Sáng kiến</span></button>
+                                    <button class="btn-action flex-fill"><i class="fa-regular fa-comment"></i> <span>Thảo luận</span></button>
+                                    <button class="btn-action flex-fill"><i class="fa-regular fa-bookmark"></i> <span>Lưu tip</span></button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="about">
+                <div class="card-bunny">
+                    <h4 class="fw-bold mb-4">Hồ sơ Năng lực (Academic Portfolio)</h4>
+                    <div class="row g-5">
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-book text-primary me-2"></i> Trình độ Học vấn</h6>
+                            <div class="border-start border-2 border-primary ps-3 py-1 mb-4">
+                                <h6 class="fw-bold mb-1">Học sinh Lớp 9</h6>
+                                <p class="text-muted small m-0">Trường THCS The Bunny (2022 - Hiện tại)</p>
+                                <ul class="small mt-2 text-muted">
+                                    <li>Định hướng: Chuyên Vật Lý</li>
+                                    <li>Môn học thế mạnh: Vật Lý, Lịch Sử, Địa Lý</li>
+                                </ul>
+                            </div>
+
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-briefcase text-success me-2"></i> Kinh nghiệm Dự án</h6>
+                            <div class="border-start border-2 border-success ps-3 py-1">
+                                <h6 class="fw-bold mb-1">Founder / Product Designer - Babe Nobuli</h6>
+                                <p class="text-muted small m-0">Tháng 3/2026 - Hiện tại</p>
+                                <ul class="small mt-2 text-muted">
+                                    <li>Xây dựng mô hình TMĐT kết hợp B2C và C2C.</li>
+                                    <li>Lập báo cáo tài chính (Tính NPV, Điểm hòa vốn BEP).</li>
+                                    <li>Thiết kế toàn bộ UI/UX luồng người dùng trên Figma.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-code text-warning me-2"></i> Kỹ năng chuyên môn</h6>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>UI/UX Design (Figma)</span><span>85%</span></div>
+                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-purple" style="width: 85%; background: var(--bunny-primary);"></div></div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>Phân tích tài chính (Excel)</span><span>70%</span></div>
+                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-success" style="width: 70%;"></div></div>
+                            </div>
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>Giải Toán/Lý cấp tốc</span><span>90%</span></div>
+                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 90%;"></div></div>
+                            </div>
+
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-award text-danger me-2"></i> Huy hiệu The Bunny</h6>
+                            <div class="d-flex gap-3">
+                                <div class="text-center" title="Chia sẻ > 30 tài liệu">
+                                    <div class="bg-light rounded-circle p-3 mb-2 border border-2 border-warning"><i class="fa-solid fa-file-export fs-3 text-warning"></i></div>
+                                    <small class="fw-bold">Thợ chia sẻ</small>
+                                </div>
+                                <div class="text-center" title="Giải đáp > 100 câu hỏi">
+                                    <div class="bg-light rounded-circle p-3 mb-2 border border-2 border-info"><i class="fa-solid fa-user-graduate fs-3 text-info"></i></div>
+                                    <small class="fw-bold">Học giả</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="buddies">
+                <div class="card-bunny">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
+                        <h4 class="fw-bold m-0">Mạng lưới học tập <span class="text-muted fs-5 fw-normal">(124 người)</span></h4>
+                        <input type="text" class="form-control w-100 w-sm-25 rounded-pill bg-light border-0" placeholder="Tìm bạn học..." style="max-width: 300px;">
+                    </div>
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6 col-lg-4">
+                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition" style="background: #FAFAFA;">
+                                <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="60" height="60">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fw-bold mb-0">Lê Minh Tuấn</h6>
+                                    <small class="text-muted d-block text-truncate">Cùng tham gia: Nhóm 3 - Babe Nobuli</small>
+                                </div>
+                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition">
+                                <img src="https://i.pravatar.cc/150?img=9" class="rounded-circle" width="60" height="60">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fw-bold mb-0">Hoàng Oanh</h6>
+                                    <small class="text-muted d-block text-truncate">Học chung: Ngữ Văn Khối 9</small>
+                                </div>
+                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
+                            </div>
+                        </div>
+                        <div class="col-md-6 col-lg-4">
+                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition">
+                                <img src="https://i.pravatar.cc/150?img=11" class="rounded-circle" width="60" height="60">
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <h6 class="fw-bold mb-0">Trần Phong</h6>
+                                    <small class="text-muted d-block text-truncate">Đối thủ Thách đấu (Tỉ số: 5-3)</small>
+                                </div>
+                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="library">
+                <div class="card-bunny">
+                    <h4 class="fw-bold mb-4">Kho tài liệu đã chia sẻ</h4>
+                    <div class="table-responsive">
+                        <table class="table table-borderless align-middle" style="min-width: 600px;">
+                            <thead class="border-bottom">
+                                <tr class="text-muted small text-uppercase">
+                                    <th>Tên File</th>
+                                    <th>Môn học</th>
+                                    <th>Kích thước</th>
+                                    <th>Lượt lưu</th>
+                                    <th class="text-end">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-bottom">
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-danger bg-opacity-10 text-danger p-2 rounded"><i class="fa-solid fa-file-pdf fs-4"></i></div>
+                                            <span class="fw-bold">DeCuong_VatLy9_Full.pdf</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">Vật Lý 9</span></td>
+                                    <td class="text-muted small">2.4 MB</td>
+                                    <td><i class="fa-solid fa-bookmark text-warning me-1"></i> 342</td>
+                                    <td class="text-end"><button class="btn btn-light border btn-sm fw-bold">Tải xuống</button></td>
+                                </tr>
+                                <tr class="border-bottom">
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="bg-success bg-opacity-10 text-success p-2 rounded"><i class="fa-solid fa-file-excel fs-4"></i></div>
+                                            <span class="fw-bold">NPV_BEP_Calculator_Nobuli.xlsx</span>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge bg-light text-dark border">Kinh doanh</span></td>
+                                    <td class="text-muted small">1.1 MB</td>
+                                    <td><i class="fa-solid fa-bookmark text-warning me-1"></i> 128</td>
+                                    <td class="text-end"><button class="btn btn-light border btn-sm fw-bold">Tải xuống</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="events">
+                <div class="card-bunny">
+                    <h4 class="fw-bold mb-4">Lịch trình & Hội thảo học thuật</h4>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="card border border-light shadow-sm h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between mb-3">
+                                        <div class="event-date-box" style="background: rgba(139, 92, 246, 0.1); color: var(--bunny-primary);">
+                                            <span class="fs-7 fw-bold text-uppercase">Th4</span><span class="fs-4 fw-bold lh-1">15</span>
+                                        </div>
+                                        <span class="badge bg-success text-white h-auto py-2 px-3 align-self-start">Tham gia</span>
+                                    </div>
+                                    <h5 class="fw-bold">Họp vận hành Babe Nobuli</h5>
+                                    <p class="text-muted small mb-3">Bàn về luồng Logistics và quản trị dòng tiền C2C.</p>
+                                    <hr>
+                                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                                        <div class="avatar-group d-flex">
+                                            <img src="https://i.pravatar.cc/150?img=1" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
+                                            <img src="https://i.pravatar.cc/150?img=2" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
+                                            <div class="rounded-circle bg-light border border-white d-flex justify-content-center align-items-center" style="width:30px; height:30px; z-index:1;"><small>+3</small></div>
+                                        </div>
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Vào phòng họp Meet</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="battles">
+                <div class="card-bunny bg-dark text-white position-relative overflow-hidden border-0">
+                    <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(30px);"></div>
+                    <div class="position-absolute" style="bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(139, 92, 246, 0.3); border-radius: 50%; filter: blur(30px);"></div>
+                    
+                    <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                        <div>
+                            <h3 class="fw-bold mb-1 text-warning"><i class="fa-solid fa-trophy me-2"></i>Sàn đấu The Bunny</h3>
+                            <p class="m-0 text-light opacity-75">Thách thức giới hạn kiến thức - Giành lấy vinh quang (và Cà rốt!)</p>
+                        </div>
+                        <button class="btn btn-warning fw-bold text-dark px-4 py-2" onclick="triggerChallenge()">+ Tạo lời thách đấu mới</button>
+                    </div>
+
+                    <div class="row g-4 position-relative z-1">
+                        <div class="col-md-6">
+                            <div class="bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-25 h-100">
+                                <span class="badge bg-danger mb-3 pulse-anim"><i class="fa-solid fa-circle-dot me-1"></i> Đang diễn ra</span>
+                                <h5 class="fw-bold text-white">50 Câu trắc nghiệm Vật Lý (Quang học)</h5>
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-4">
+                                    <div class="text-center">
+                                        <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border border-2 border-warning mb-2" width="60">
+                                        <h6 class="m-0 fw-bold">Alex (Bạn)</h6>
+                                        <h3 class="text-warning m-0">38 Điểm</h3>
+                                    </div>
+                                    <h1 class="text-white opacity-50 m-0 fst-italic">VS</h1>
+                                    <div class="text-center">
+                                        <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle border border-2 border-secondary mb-2" width="60">
+                                        <h6 class="m-0 fw-bold">Minh Tuấn</h6>
+                                        <h3 class="text-light m-0">42 Điểm</h3>
+                                    </div>
+                                </div>
+                                <div class="mt-4 text-center">
+                                    <button class="btn btn-light text-dark fw-bold w-100 rounded-pill">Tiếp tục thi đấu</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="bg-white p-4 rounded-4 text-dark h-100 shadow">
+                                <h5 class="fw-bold mb-3">Lịch sử giao tranh</h5>
+                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-crown text-warning fs-5"></i>
+                                        <div>
+                                            <h6 class="m-0 fw-bold small">Giải đề Lịch Sử Khối 9</h6>
+                                            <span class="text-muted" style="font-size: 11px;">Thắng Hoàng Oanh (9.5 - 8.0)</span>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-success-subtle text-success">+50 XP</span>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="fa-solid fa-skull-crossbones text-danger fs-5"></i>
+                                        <div>
+                                            <h6 class="m-0 fw-bold small">Pomodoro 4h Code Figma</h6>
+                                            <span class="text-muted" style="font-size: 11px;">Thua Trần Phong (Bỏ cuộc giữa chừng)</span>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-danger-subtle text-danger">-20 XP</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="toast-container">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-warning text-dark border-0">
+                <i class="fa-solid fa-khanda me-2"></i>
+                <strong class="me-auto">Hệ thống Thách đấu</strong>
+                <small>Vừa xong</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body bg-white fw-medium">
+                Tính năng tạo lời thách đấu mới đang trong giai đoạn Beta. Sắp ra mắt!
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script src="./js/thach-dau.js"></script>
+</body>
+</html>
