@@ -29,7 +29,7 @@ Giảng viên hướng dẫn: TS. Đặng Ngọc Hoàng Thành
 ---
 
 ## 🛠 Công nghệ sử dụng
-* **Frontend:** ReactJS
-* **Backend:** Node.js 
-* **Database:** SQL Server
+* **Frontend:** HTML, CSS, JS
+* **Backend:** PHP
+* **Database:** MySQL
 * **Version Control:** Git & GitHub
