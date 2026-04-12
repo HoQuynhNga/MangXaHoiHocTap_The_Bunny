@@ -11,3 +11,67 @@
         /* Offcanvas Accordion styling */
         .accordion-button:not(.collapsed) { background-color: rgba(139, 92, 246, 0.05); color: var(--bunny-primary); box-shadow: none; }
         .accordion-button:focus { box-shadow: none; border-color: rgba(0,0,0,.125); }
+           RESPONSIVE & MOBILE DESIGN (NEW)
+        ========================================= */
+        /* Offcanvas Menu Customization */
+        .offcanvas-bunny { background-color: var(--bg-card); width: 280px !important; }
+        .offcanvas-bunny .nav-link-custom { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 20px; margin-bottom: 4px; }
+        
+        @media (max-width: 991px) {
+            .info-block { padding: 24px; }
+            .profile-layout { gap: 20px; }
+        }
+
+        @media (max-width: 768px) {
+            body { padding-top: 56px; }
+            .navbar-bunny { height: 56px; }
+            
+            /* Cover Block */
+            .cover-block { height: 180px; border-radius: 0; margin-top: 0 !important; }
+            .btn-edit-cover { padding: 6px 12px; font-size: 12px; bottom: 12px; right: 12px; }
+            
+            /* Info Block (Avatar & Info) */
+            .info-block { margin: 0; border-radius: 0; padding: 20px 16px; box-shadow: none; border-bottom: 1px solid var(--border-color); }
+            .profile-layout { flex-direction: column; align-items: center; text-align: center; gap: 16px; border-bottom: none; padding-bottom: 0; }
+            .avatar-container { margin-top: -70px; }
+            .avatar-img { width: 120px; height: 120px; border-width: 3px; }
+            .status-badge { width: 20px; height: 20px; border-width: 3px; bottom: 8px; right: 8px; }
+            
+            /* Name & Stats */
+            .profile-name-wrapper { justify-content: center; }
+            .profile-name { font-size: 24px; }
+            .verified-tick { font-size: 20px; }
+            .profile-stats { justify-content: center; flex-wrap: wrap; gap: 15px; }
+            .stat-value { font-size: 16px; }
+            .stat-label { font-size: 12px; }
+            
+            /* Buttons */
+            .action-buttons { width: 100%; flex-wrap: wrap; justify-content: center; margin-top: 8px; }
+            .action-buttons button { flex: 1; min-width: 120px; justify-content: center; }
+            
+            /* Tabs */
+            .profile-tabs { padding-top: 8px; border-top: 1px solid var(--border-color); margin-top: 16px; }
+            .nav-link-custom { padding: 10px 16px; font-size: 14px; }
+            
+            /* Main Content Adjustments */
+            .container { padding-left: 12px; padding-right: 12px; }
+            .card-bunny { padding: 16px; border-radius: 12px; }
+            
+            /* Heatmap Scroll Fix */
+            .heatmap-wrapper { overflow-x: auto; padding-bottom: 10px; margin: 0 -16px; padding-left: 16px; padding-right: 16px; }
+            .heatmap-container { padding: 0 16px; }
+            
+            /* Post Composer Adjustments */
+            .btn-action span { display: none; } /* Hide text on composer buttons for space */
+            .post-composer img { width: 36px; height: 36px; }
+            .composer-input { padding: 10px 16px; font-size: 14px; }
+            
+            /* Challenge Banner Stack */
+            .challenge-banner .d-flex { flex-direction: column; text-align: center; gap: 16px; }
+            .challenge-banner .text-end { text-align: center !important; }
+            
+            /* Adjust padding in post cards */
+            .post-header, .post-body, .post-footer { padding-left: 16px; padding-right: 16px; }
+            .post-attachment { padding: 16px; flex-direction: column; text-align: center; }
+        }
+
