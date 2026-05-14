@@ -1,9 +1,32 @@
+<?php
+// ==============================================================================
+// KHỞI TẠO CÁC BIẾN DỮ LIỆU (MÔ PHỎNG DỮ LIỆU TỪ DATABASE CHƯA CONFIG SQL)
+// ==============================================================================
+$page_title     = "Alex Nguyễn - The Bunny Profile";
+$user_name      = "Alex Nguyễn";
+$user_avatar    = "https://i.pravatar.cc/150?img=12";
+$user_cover     = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80";
+$user_bio       = "Định hướng UI/UX & Kinh doanh (Babe Nobuli)";
+$is_verified    = true; // Có tick xanh hay không
+
+// Các chỉ số thống kê
+$stats_fire     = 15;
+$stats_xp       = "1,520";
+$stats_buddies  = 124;
+$stats_docs     = 45;
+
+// Thông tin Tab Giới thiệu
+$about_quote    = '"Kiến thức là nền tảng, thiết kế là giải pháp."';
+$about_edu      = "Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý";
+$about_job      = "Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b>";
+$about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alex Nguyễn - The Bunny Profile</title>
+    <title><?= $page_title; ?></title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -432,12 +455,12 @@
             
             <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border">
                 <i class="fa-solid fa-fire text-danger"></i>
-                <span class="fw-bold fs-6">15</span>
+                <span class="fw-bold fs-6"><?= $stats_fire; ?></span>
             </div>
         </div>
 
         <a href="trang-ca-nhan.html">
-            <img src="https://i.pravatar.cc/150?img=12" alt="Alex" class="rounded-circle border cursor-pointer" width="40" height="40">
+            <img src="<?= $user_avatar; ?>" alt="<?= $user_name; ?>" class="rounded-circle border cursor-pointer" width="40" height="40">
         </a>
     </div>
 </nav>
@@ -472,7 +495,7 @@
     </div>
 
     <div class="cover-block mt-md-3 animate-slide-up">
-        <div class="w-100 h-100 d-flex justify-content-center align-items-center text-white" style="background: url('https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80') center/cover;">
+        <div class="w-100 h-100 d-flex justify-content-center align-items-center text-white" style="background: url('<?= $user_cover; ?>') center/cover;">
         </div>
         <button class="btn-edit-cover"><i class="fa-solid fa-camera me-2 d-none d-sm-inline"></i>Sửa bìa</button>
     </div>
@@ -481,7 +504,7 @@
         
         <div class="profile-layout">
             <div class="avatar-container">
-                <img src="https://i.pravatar.cc/150?img=12" alt="Alex Nguyễn" class="avatar-img">
+                <img src="<?= $user_avatar; ?>" alt="<?= $user_name; ?>" class="avatar-img">
                 <div class="status-badge" title="Đang học bài"></div>
             </div>
             
@@ -489,22 +512,24 @@
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-start">
                     <div class="text-center text-md-start">
                         <div class="profile-name-wrapper">
-                            <h1 class="profile-name">Alex Nguyễn</h1>
-                            <i class="fa-solid fa-circle-check verified-tick" title="Học sinh xác thực"></i>
+                            <h1 class="profile-name"><?= $user_name; ?></h1>
+                            <?php if($is_verified): ?>
+                                <i class="fa-solid fa-circle-check verified-tick" title="Học sinh xác thực"></i>
+                            <?php endif; ?>
                         </div>
-                        <p class="text-muted fw-medium fs-5 m-0 mb-3 mb-md-0">Định hướng UI/UX & Kinh doanh (Babe Nobuli)</p>
+                        <p class="text-muted fw-medium fs-5 m-0 mb-3 mb-md-0"><?= $user_bio; ?></p>
                         
                         <div class="profile-stats">
                             <div class="stat-item">
-                                <span class="stat-value">1,520</span>
+                                <span class="stat-value"><?= $stats_xp; ?></span>
                                 <span class="stat-label">Cà rốt (XP)</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-value">124</span>
+                                <span class="stat-value"><?= $stats_buddies; ?></span>
                                 <span class="stat-label">Bạn cùng tiến</span>
                             </div>
                             <div class="stat-item">
-                                <span class="stat-value">45</span>
+                                <span class="stat-value"><?= $stats_docs; ?></span>
                                 <span class="stat-label">Tài liệu</span>
                             </div>
                         </div>
@@ -539,20 +564,20 @@
                         
                         <div class="card-bunny animate-slide-up" style="animation-delay: 0.2s;">
                             <h5 class="fw-bold mb-3">Giới thiệu</h5>
-                            <p class="text-center fst-italic mb-3 text-muted">"Kiến thức là nền tảng, thiết kế là giải pháp."</p>
+                            <p class="text-center fst-italic mb-3 text-muted"><?= $about_quote; ?></p>
                             
                             <ul class="list-unstyled d-flex flex-column gap-3 mb-4 small">
                                 <li class="d-flex align-items-center gap-3">
                                     <i class="fa-solid fa-graduation-cap text-muted fs-5 w-20px"></i>
-                                    <span>Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý</span>
+                                    <span><?= $about_edu; ?></span>
                                 </li>
                                 <li class="d-flex align-items-center gap-3">
                                     <i class="fa-solid fa-briefcase text-muted fs-5 w-20px"></i>
-                                    <span>Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b></span>
+                                    <span><?= $about_job; ?></span>
                                 </li>
                                 <li class="d-flex align-items-center gap-3">
                                     <i class="fa-solid fa-location-dot text-muted fs-5 w-20px"></i>
-                                    <span>Sống tại <b>TP. Hồ Chí Minh</b></span>
+                                    <span><?= $about_loc; ?></span>
                                 </li>
                             </ul>
                             
@@ -635,7 +660,7 @@
 
                         <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
                             <div class="post-composer mb-3">
-                                <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="44" height="44">
+                                <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
                                 <input type="text" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
                             </div>
                             <div class="d-flex justify-content-between border-top pt-3">
@@ -648,9 +673,9 @@
                         <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.4s;">
                             <div class="post-header">
                                 <div class="d-flex gap-3 align-items-center">
-                                    <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="48" height="48">
+                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="48" height="48">
                                     <div>
-                                        <h6 class="fw-bold m-0 d-flex align-items-center gap-1">Alex Nguyễn <i class="fa-solid fa-circle-check text-primary fs-6"></i></h6>
+                                        <h6 class="fw-bold m-0 d-flex align-items-center gap-1"><?= $user_name; ?> <?php if($is_verified): ?><i class="fa-solid fa-circle-check text-primary fs-6"></i><?php endif; ?></h6>
                                         <span class="text-muted small">2 giờ trước · <i class="fa-solid fa-earth-americas"></i></span>
                                     </div>
                                 </div>
@@ -693,9 +718,9 @@
                         <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.5s;">
                             <div class="post-header">
                                 <div class="d-flex gap-3 align-items-center">
-                                    <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle" width="48" height="48">
+                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="48" height="48">
                                     <div>
-                                        <h6 class="fw-bold m-0">Alex Nguyễn</h6>
+                                        <h6 class="fw-bold m-0"><?= $user_name; ?></h6>
                                         <span class="text-muted small">Hôm qua lúc 20:30 · <i class="fa-solid fa-user-group"></i> Nhóm Yêu Văn Học</span>
                                     </div>
                                 </div>
@@ -792,7 +817,7 @@
             <div class="tab-pane fade" id="buddies">
                 <div class="card-bunny">
                     <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
-                        <h4 class="fw-bold m-0">Mạng lưới học tập <span class="text-muted fs-5 fw-normal">(124 người)</span></h4>
+                        <h4 class="fw-bold m-0">Mạng lưới học tập <span class="text-muted fs-5 fw-normal">(<?= $stats_buddies; ?> người)</span></h4>
                         <input type="text" class="form-control w-100 w-sm-25 rounded-pill bg-light border-0" placeholder="Tìm bạn học..." style="max-width: 300px;">
                     </div>
                     
@@ -928,7 +953,7 @@
                                 
                                 <div class="d-flex justify-content-between align-items-center mt-4">
                                     <div class="text-center">
-                                        <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border border-2 border-warning mb-2" width="60">
+                                        <img src="<?= $user_avatar; ?>" class="rounded-circle border border-2 border-warning mb-2" width="60">
                                         <h6 class="m-0 fw-bold">Alex (Bạn)</h6>
                                         <h3 class="text-warning m-0">38 Điểm</h3>
                                     </div>
