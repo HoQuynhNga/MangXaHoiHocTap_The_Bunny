@@ -1,25 +1,88 @@
 <?php
-// ==============================================================================
-// KHỞI TẠO CÁC BIẾN DỮ LIỆU (MÔ PHỎNG DỮ LIỆU TỪ DATABASE CHƯA CONFIG SQL)
-// ==============================================================================
+session_start();
+
+// =====================================================================================
+// PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
+// =====================================================================================
+
+// Require file config để kết nối CSDL (Nếu chưa có DB, hãy tạm comment dòng này để test UI)
+// require_once 'config.php'; 
+
+// 1. KHỞI TẠO BIẾN MẶC ĐỊNH (Giữ cho UI không bị vỡ/lỗi khi chưa có kết nối DB thành công)
 $page_title     = "Alex Nguyễn - The Bunny Profile";
 $user_name      = "Alex Nguyễn";
 $user_avatar    = "https://i.pravatar.cc/150?img=12";
 $user_cover     = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80";
 $user_bio       = "Định hướng UI/UX & Kinh doanh (Babe Nobuli)";
-$is_verified    = true; // Có tick xanh hay không
+$is_verified    = true;
 
-// Các chỉ số thống kê
 $stats_fire     = 15;
 $stats_xp       = "1,520";
 $stats_buddies  = 124;
 $stats_docs     = 45;
 
-// Thông tin Tab Giới thiệu
 $about_quote    = '"Kiến thức là nền tảng, thiết kế là giải pháp."';
 $about_edu      = "Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý";
 $about_job      = "Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b>";
 $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
+
+$message_notify = ""; // Biến dùng để hiện thông báo khi chạy Procedure
+
+// Giả lập ID của Alex đang đăng nhập
+$current_user_id = 'UUID-123-456'; 
+
+// =====================================================================================
+// PHẦN 2: THỰC THI SQL (QUERY, PROCEDURE, TRIGGER)
+// =====================================================================================
+/* Bỏ comment đoạn này khi bạn đã nối DB thành công trong config.php
+
+try {
+    // ---------------------------------------------------------------------------------
+    // [1] NỐI QUERY: Lấy thông tin người dùng từ Database đắp vào giao diện
+    // ---------------------------------------------------------------------------------
+    $sql_query = "SELECT u.username, h.thongTinDinhDanh, s.xp_carrots, s.buddy_count, s.document_count 
+                  FROM [User] u 
+                  LEFT JOIN HoSoCaNhan h ON u.id = h.id 
+                  LEFT JOIN UserStats s ON u.id = s.user_id 
+                  WHERE u.id = :id";
+    $stmt = $pdo->prepare($sql_query);
+    $stmt->execute(['id' => $current_user_id]);
+    
+    if ($row = $stmt->fetch()) {
+        // Ghi đè biến mặc định bằng dữ liệu thật từ SQL
+        $user_name      = $row['username'];
+        $user_bio       = $row['thongTinDinhDanh'];
+        $stats_xp       = number_format($row['xp_carrots']);
+        $stats_buddies  = $row['buddy_count'];
+        $stats_docs     = $row['document_count'];
+    }
+
+    // ---------------------------------------------------------------------------------
+    // [2] NỐI PROCEDURE: Xử lý Đăng bài (Khi user gõ vào thẻ input và ấn Enter)
+    // ---------------------------------------------------------------------------------
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['noidung_post']) && !empty($_POST['noidung_post'])) {
+        $content = $_POST['noidung_post'];
+        
+        // Gọi Stored Procedure [Tennguoitao]_proc_CreatePost
+        $proc_stmt = $pdo->prepare("EXEC proc_CreatePost @UserId = :uid, @Content = :noidung");
+        $proc_stmt->execute([
+            'uid' => $current_user_id,
+            'noidung' => $content
+        ]);
+        
+        $message_notify = "Đăng bài thành công! (Dữ liệu đã vào DB)";
+        
+        // ---------------------------------------------------------------------------------
+        // [3] KẾT NỐI TRIGGER: 
+        // LƯU Ý QUAN TRỌNG: PHP KHÔNG CẦN VIẾT CODE ĐỂ GỌI TRIGGER.
+        // Ngay khi Procedure phía trên chạy lệnh INSERT vào bảng Bài Đăng thành công,
+        // Trigger trên CSDL (như tự động thông báo, tự động cộng điểm) SẼ TỰ ĐỘNG KÍCH HOẠT.
+        // ---------------------------------------------------------------------------------
+    }
+} catch (Exception $e) {
+    $message_notify = "Lỗi kết nối CSDL: " . $e->getMessage();
+}
+*/
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -330,7 +393,7 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
         .event-mini { display: flex; gap: 12px; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); transition: var(--transition); }
         .event-mini:hover { border-color: var(--bunny-primary); background: #F9FAFB; }
         
-        .event-date-box { background: rgba(139, 92, 246, 0.1); color: var(--bunny-primary); border-radius: 8px; min-width: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+        .event-date-box { background: rgba(139, 92, 246, 0.1); color: var(--bunny-primary); border-radius: 8px; min-width: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 8px; }
 
         .challenge-banner { background: linear-gradient(135deg, #FFEDD5 0%, #FEF08A 100%); border: 1px solid #FDE047; border-radius: var(--radius-md); padding: 16px; position: relative; overflow: hidden; }
         .challenge-icon { position: absolute; right: -10px; bottom: -10px; font-size: 80px; opacity: 0.1; transform: rotate(-15deg); }
@@ -459,7 +522,7 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
             </div>
         </div>
 
-        <a href="trang-ca-nhan.php">
+        <a href="trang-ca-nhan.html">
             <img src="<?= $user_avatar; ?>" alt="<?= $user_name; ?>" class="rounded-circle border cursor-pointer" width="40" height="40">
         </a>
     </div>
@@ -649,7 +712,7 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                                 <div>
                                     <span class="badge bg-warning text-dark mb-2"><i class="fa-solid fa-circle-dot text-danger fa-fade me-1"></i> Đang trực tiếp</span>
                                     <h5 class="fw-bold m-0 text-dark">Trận chiến: 50 Câu trắc nghiệm Vật Lý</h5>
-                                    <p class="small text-dark m-0 mt-1 d-flex justify-content-center justify-content-md-start align-items-center gap-2">Đối thủ: <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="20" height="20"> Minh Tuấn</p>
+                                    <p class="small text-dark m-0 mt-1 d-flex justify-content-center justify-content-md-start align-items-center gap-2">Đối thủ: <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="20"> <b>Lê Minh Tuấn</b></p>
                                 </div>
                                 <div class="text-end">
                                     <h3 class="fw-bold text-danger m-0 mb-1">38 - 42</h3>
@@ -659,10 +722,18 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                         </div>
 
                         <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
-                            <div class="post-composer mb-3">
-                                <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
-                                <input type="text" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
-                            </div>
+                            <?php if($message_notify != ""): ?>
+                                <div class="alert alert-success py-2 mx-3 mt-3 small fw-bold"><i class="fa-solid fa-check-circle me-1"></i> <?= $message_notify ?></div>
+                            <?php endif; ?>
+                            
+                            <form method="POST" action="">
+                                <div class="post-composer mb-3 px-3 pt-3">
+                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
+                                    <input type="text" name="noidung_post" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
+                                    <button type="submit" style="display:none;"></button>
+                                </div>
+                            </form>
+                            
                             <div class="d-flex justify-content-between border-top pt-3">
                                 <button class="btn-action flex-fill"><i class="fa-solid fa-file-pdf text-danger"></i> <span>Đính Note</span></button>
                                 <button class="btn-action flex-fill"><i class="fa-solid fa-pen-ruler text-success"></i> <span>Code/Thiết kế</span></button>
@@ -684,7 +755,7 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                             
                             <div class="post-body">
                                 <p>Hoàn tất mô hình tài chính và luồng vận hành cho nền tảng <b>Babe Nobuli</b>. 🚀</p>
-                                <p>Quyết định tập trung hoàn toàn vào cấu trúc <b>Hybrid B2C và C2C</b>. Ở pha này, nhóm 3 tụi mình lược bỏ bớt các mô tả công nghệ rồi, focus vào Revenue Stream & Cost Structure thôi.</p>
+                                <p>Quyết định tập trung hoàn toàn vào cấu trúc <b>Hybrid B2C và C2C</b>. Ở pha này, nhóm 3 tụi mình lược bỏ bớt các mô tả công nghệ rườm rà để tập trung giải quyết bài toán: Dòng chảy hàng hóa (Operational flow) và Tối ưu giá trị vòng đời khách hàng (CLV). <br><br>Mọi người vào file Figma check lại luồng mua hàng và kiểm kho giúp mình nhé!</p>
                             </div>
                             
                             <div class="post-attachment">
@@ -728,8 +799,8 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                             
                             <div class="post-body">
                                 <p><b>Góc đính chính Văn học:</b> 📖</p>
-                                <p>Dạo quanh diễn đàn thấy nhiều bạn làm bài phân tích tác phẩm "Những người khốn khổ" (Les Misérables) hay bị nhầm lẫn một chi tiết quan trọng.</p>
-                                <p>Người mẹ nghèo Fantine không có liên quan gì đến việc đi tù cả. Nhân vật thụ án tù khổ sai chính là <b>Jean Valjean</b> (vì ăn cắp bánh mì).</p>
+                                <p>Dạo quanh diễn đàn thấy nhiều bạn làm bài phân tích tác phẩm "Những người khốn khổ" (Les Misérables) hay bị nhầm lẫn một chi tiết rất quan trọng. Mọi người hay viết là người mẹ nghèo Fantine phải trải qua kiếp tù đày. Thực ra không phải nhé!</p>
+                                <p>Người mẹ nghèo Fantine không có liên quan gì đến việc đi tù cả. Nhân vật thụ án tù khổ sai chính là <b>Jean Valjean</b> (vì ăn cắp một chiếc bánh mì cho cháu). Chúc các bạn viết bài luận không bị trừ điểm oan chỗ này nha! 😉</p>
                                 <div class="d-flex gap-2 mt-3 flex-wrap">
                                     <span class="tag-badge text-primary bg-primary bg-opacity-10">#VanHocNuocNgoai</span>
                                     <span class="tag-badge text-primary bg-primary bg-opacity-10">#LesMiserables</span>
@@ -921,7 +992,7 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                                         <div class="avatar-group d-flex">
                                             <img src="https://i.pravatar.cc/150?img=1" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
                                             <img src="https://i.pravatar.cc/150?img=2" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
-                                            <div class="rounded-circle bg-light border border-white d-flex justify-content-center align-items-center" style="width:30px; height:30px; z-index:1;"><small class="fw-bold">+3</small></div>
+                                            <div class="rounded-circle bg-light border border-white d-flex justify-content-center align-items-center" style="width:30px; height:30px; z-index:1;"><small>+3</small></div>
                                         </div>
                                         <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Vào phòng họp Meet</button>
                                     </div>
@@ -998,27 +1069,57 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                     </div>
                 </div>
             </div>
+
+        </div>
+    </div>
+
+    <div class="toast-container">
+        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-warning text-dark border-0">
+                <i class="fa-solid fa-khanda me-2"></i>
+                <strong class="me-auto">Hệ thống Thách đấu</strong>
+                <small>Vừa xong</small>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body bg-white fw-medium">
+                Tính năng tạo lời thách đấu mới đang trong giai đoạn Beta. Sắp ra mắt!
+            </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        // Heatmap Grid Generation
-        function generateHeatmap() {
-            const container = document.getElementById('heatmap-grid');
-            const days = 30;
-            for (let i = 0; i < days; i++) {
-                const cell = document.createElement('div');
-                cell.className = `heat-cell ${['', 'heat-lvl-1', 'heat-lvl-2', 'heat-lvl-3'][Math.floor(Math.random() * 4)]}`;
-                container.appendChild(cell);
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Logic Sinh bản đồ Heatmap tự động
+            const heatmapGrid = document.getElementById('heatmap-grid');
+            if (heatmapGrid) {
+                // Tạo 15 cột x 4 hàng = 60 ô
+                for (let i = 0; i < 60; i++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'heat-cell';
+                    
+                    const rand = Math.random();
+                    if (rand > 0.9) cell.classList.add('heat-lvl-3');
+                    else if (rand > 0.7) cell.classList.add('heat-lvl-2');
+                    else if (rand > 0.4) cell.classList.add('heat-lvl-1');
+                    
+                    cell.title = `${Math.floor(Math.random() * 10)} đóng góp vào ngày này`;
+                    heatmapGrid.appendChild(cell);
+                }
             }
-        }
-        
-        function triggerChallenge() {
-            alert('✨ Giao diện thách đấu sẽ được kích hoạt! Hiện tại chỉ là mẫu HTML/CSS.');
-        }
 
-        document.addEventListener('DOMContentLoaded', generateHeatmap);
+            // 2. Kích hoạt Tooltip Bootstrap
+            const tooltipTriggerList = document.querySelectorAll('[title]');
+            const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+        });
+
+        // 3. Hàm kích hoạt Thông báo Thách đấu
+        function triggerChallenge() {
+            const toastLiveExample = document.getElementById('liveToast');
+            const toast = new bootstrap.Toast(toastLiveExample);
+            toast.show();
+        }
     </script>
 </body>
 </html>
