@@ -1,25 +1,88 @@
 <?php
-// ==============================================================================
-// KHỞI TẠO CÁC BIẾN DỮ LIỆU (MÔ PHỎNG DỮ LIỆU TỪ DATABASE CHƯA CONFIG SQL)
-// ==============================================================================
+session_start();
+
+// =====================================================================================
+// PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
+// =====================================================================================
+
+// Require file config để kết nối CSDL (Nếu chưa có DB, hãy tạm comment dòng này để test UI)
+// require_once 'config.php'; 
+
+// 1. KHỞI TẠO BIẾN MẶC ĐỊNH (Giữ cho UI không bị vỡ/lỗi khi chưa có kết nối DB thành công)
 $page_title     = "Alex Nguyễn - The Bunny Profile";
 $user_name      = "Alex Nguyễn";
 $user_avatar    = "https://i.pravatar.cc/150?img=12";
 $user_cover     = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80";
 $user_bio       = "Định hướng UI/UX & Kinh doanh (Babe Nobuli)";
-$is_verified    = true; // Có tick xanh hay không
+$is_verified    = true;
 
-// Các chỉ số thống kê
 $stats_fire     = 15;
 $stats_xp       = "1,520";
 $stats_buddies  = 124;
 $stats_docs     = 45;
 
-// Thông tin Tab Giới thiệu
 $about_quote    = '"Kiến thức là nền tảng, thiết kế là giải pháp."';
 $about_edu      = "Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý";
 $about_job      = "Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b>";
 $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
+
+$message_notify = ""; // Biến dùng để hiện thông báo khi chạy Procedure
+
+// Giả lập ID của Alex đang đăng nhập
+$current_user_id = 'UUID-123-456'; 
+
+// =====================================================================================
+// PHẦN 2: THỰC THI SQL (QUERY, PROCEDURE, TRIGGER)
+// =====================================================================================
+/* Bỏ comment đoạn này khi bạn đã nối DB thành công trong config.php
+
+try {
+    // ---------------------------------------------------------------------------------
+    // [1] NỐI QUERY: Lấy thông tin người dùng từ Database đắp vào giao diện
+    // ---------------------------------------------------------------------------------
+    $sql_query = "SELECT u.username, h.thongTinDinhDanh, s.xp_carrots, s.buddy_count, s.document_count 
+                  FROM [User] u 
+                  LEFT JOIN HoSoCaNhan h ON u.id = h.id 
+                  LEFT JOIN UserStats s ON u.id = s.user_id 
+                  WHERE u.id = :id";
+    $stmt = $pdo->prepare($sql_query);
+    $stmt->execute(['id' => $current_user_id]);
+    
+    if ($row = $stmt->fetch()) {
+        // Ghi đè biến mặc định bằng dữ liệu thật từ SQL
+        $user_name      = $row['username'];
+        $user_bio       = $row['thongTinDinhDanh'];
+        $stats_xp       = number_format($row['xp_carrots']);
+        $stats_buddies  = $row['buddy_count'];
+        $stats_docs     = $row['document_count'];
+    }
+
+    // ---------------------------------------------------------------------------------
+    // [2] NỐI PROCEDURE: Xử lý Đăng bài (Khi user gõ vào thẻ input và ấn Enter)
+    // ---------------------------------------------------------------------------------
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['noidung_post']) && !empty($_POST['noidung_post'])) {
+        $content = $_POST['noidung_post'];
+        
+        // Gọi Stored Procedure [Tennguoitao]_proc_CreatePost
+        $proc_stmt = $pdo->prepare("EXEC proc_CreatePost @UserId = :uid, @Content = :noidung");
+        $proc_stmt->execute([
+            'uid' => $current_user_id,
+            'noidung' => $content
+        ]);
+        
+        $message_notify = "Đăng bài thành công! (Dữ liệu đã vào DB)";
+        
+        // ---------------------------------------------------------------------------------
+        // [3] KẾT NỐI TRIGGER: 
+        // LƯU Ý QUAN TRỌNG: PHP KHÔNG CẦN VIẾT CODE ĐỂ GỌI TRIGGER.
+        // Ngay khi Procedure phía trên chạy lệnh INSERT vào bảng Bài Đăng thành công,
+        // Trigger trên CSDL (như tự động thông báo, tự động cộng điểm) SẼ TỰ ĐỘNG KÍCH HOẠT.
+        // ---------------------------------------------------------------------------------
+    }
+} catch (Exception $e) {
+    $message_notify = "Lỗi kết nối CSDL: " . $e->getMessage();
+}
+*/
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -659,10 +722,18 @@ $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
                         </div>
 
                         <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
-                            <div class="post-composer mb-3">
-                                <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
-                                <input type="text" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
-                            </div>
+                            <?php if($message_notify != ""): ?>
+                                <div class="alert alert-success py-2 mx-3 mt-3 small fw-bold"><i class="fa-solid fa-check-circle me-1"></i> <?= $message_notify ?></div>
+                            <?php endif; ?>
+                            
+                            <form method="POST" action="">
+                                <div class="post-composer mb-3 px-3 pt-3">
+                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
+                                    <input type="text" name="noidung_post" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
+                                    <button type="submit" style="display:none;"></button>
+                                </div>
+                            </form>
+                            
                             <div class="d-flex justify-content-between border-top pt-3">
                                 <button class="btn-action flex-fill"><i class="fa-solid fa-file-pdf text-danger"></i> <span>Đính Note</span></button>
                                 <button class="btn-action flex-fill"><i class="fa-solid fa-pen-ruler text-success"></i> <span>Code/Thiết kế</span></button>
