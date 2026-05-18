@@ -25,59 +25,58 @@ $about_edu      = "Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý";
 $about_job      = "Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b>";
 $about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
 
-$message_notify = ""; // Biến dùng để hiện thông báo khi chạy Procedure
+$message_notify = ""; // Biến dùng để hiện thông báo khi chạy thành công
 
-// Giả lập ID của Alex đang đăng nhập
-$current_user_id = 'UUID-123-456'; 
+// [SỬA]: Giả lập ID của Alex đang đăng nhập (Khớp với INT AUTO_INCREMENT trong MySQL)
+$current_user_id = 1; 
 
 // =====================================================================================
-// PHẦN 2: THỰC THI SQL (QUERY, PROCEDURE, TRIGGER)
+// PHẦN 2: THỰC THI SQL (QUERY VÀ INSERT)
 // =====================================================================================
 
 try {
     // ---------------------------------------------------------------------------------
     // [1] NỐI QUERY: Lấy thông tin người dùng từ Database đắp vào giao diện
+    // [SỬA]: Dùng Subqueries thay cho bảng UserStats không tồn tại, sửa tên bảng/cột chuẩn.
     // ---------------------------------------------------------------------------------
-    $sql_query = "SELECT u.username, h.thongTinDinhDanh, s.xp_carrots, s.buddy_count, s.document_count 
-                  FROM [User] u 
-                  LEFT JOIN HoSoCaNhan h ON u.id = h.id 
-                  LEFT JOIN UserStats s ON u.id = s.user_id 
+    $sql_query = "SELECT 
+                    u.username, 
+                    h.thong_tin_dinh_danh,
+                    (SELECT IFNULL(SUM(diem_so), 0) FROM phien_luyen_tap WHERE user_id = u.id) AS xp_carrots,
+                    (SELECT COUNT(*) FROM ban_cung_tien WHERE (user_id = u.id OR friend_user_id = u.id) AND status = 'Accepted') AS buddy_count,
+                    (SELECT COUNT(*) FROM tai_lieu WHERE user_id = u.id) AS document_count
+                  FROM users u 
+                  LEFT JOIN ho_so_ca_nhan h ON u.id = h.user_id 
                   WHERE u.id = :id";
+                  
     $stmt = $pdo->prepare($sql_query);
     $stmt->execute(['id' => $current_user_id]);
     
-    if ($row = $stmt->fetch()) {
+    if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         // Ghi đè biến mặc định bằng dữ liệu thật từ SQL
         $user_name      = $row['username'];
-        $user_bio       = $row['thongTinDinhDanh'];
+        $user_bio       = $row['thong_tin_dinh_danh'] ?? $user_bio; // Dự phòng nếu null
         $stats_xp       = number_format($row['xp_carrots']);
         $stats_buddies  = $row['buddy_count'];
         $stats_docs     = $row['document_count'];
     }
 
     // ---------------------------------------------------------------------------------
-    // [2] NỐI PROCEDURE: Xử lý Đăng bài (Khi user gõ vào thẻ input và ấn Enter)
+    // [2] XỬ LÝ ĐĂNG BÀI: (Khi user gõ vào thẻ input và ấn Enter)
     // ---------------------------------------------------------------------------------
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['noidung_post']) && !empty($_POST['noidung_post'])) {
         $content = $_POST['noidung_post'];
         
-        // Gọi Stored Procedure [Tennguoitao]_proc_CreatePost
-        $proc_stmt = $pdo->prepare("EXEC proc_CreatePost @UserId = :uid, @Content = :noidung");
-        $proc_stmt->execute([
+        // [SỬA]: Dùng lệnh INSERT INTO chuẩn của MySQL thay cho EXEC của SQL Server
+        $insert_stmt = $pdo->prepare("INSERT INTO bai_dang (user_id, noi_dung) VALUES (:uid, :noidung)");
+        $insert_stmt->execute([
             'uid' => $current_user_id,
             'noidung' => $content
         ]);
         
         $message_notify = "Đăng bài thành công! (Dữ liệu đã vào DB)";
-        
-        // ---------------------------------------------------------------------------------
-        // [3] KẾT NỐI TRIGGER: 
-        // LƯU Ý QUAN TRỌNG: PHP KHÔNG CẦN VIẾT CODE ĐỂ GỌI TRIGGER.
-        // Ngay khi Procedure phía trên chạy lệnh INSERT vào bảng Bài Đăng thành công,
-        // Trigger trên CSDL (như tự động thông báo, tự động cộng điểm) SẼ TỰ ĐỘNG KÍCH HOẠT.
-        // ---------------------------------------------------------------------------------
     }
-} catch (Exception $e) {
+} catch (PDOException $e) { // [SỬA]: Bắt lỗi PDOException cụ thể hơn
     $message_notify = "Lỗi kết nối CSDL: " . $e->getMessage();
 }
 ?>
