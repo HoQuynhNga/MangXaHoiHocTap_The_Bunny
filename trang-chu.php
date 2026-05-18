@@ -1,16 +1,6 @@
 <?php
-// ============================================================
 // PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
-// ============================================================
-// Require file config để kết nối CSDL (Nếu chưa có DB, hãy tạm comment dòng này để test UI)
-// require_once 'config.php';
-
-// ============================================================
-// 1. KHỞI TẠO BIẾN MẶC ĐỊNH
-// (Giữ cho UI không bị vỡ/lỗi khi chưa có kết nối DB thành công)
-// ============================================================
-
-// --- NGƯỜI DÙNG ĐANG ĐĂNG NHẬP (users) ---
+require_once 'config.php';
 $currentUser = [
     'id'         => 1,                                      // users.user_id
     'name'       => 'Alex Nguyễn',                          // users.full_name
