@@ -5,8 +5,7 @@ session_start();
 // PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
 // =====================================================================================
 
-// Require file config để kết nối CSDL (Nếu chưa có DB, hãy tạm comment dòng này để test UI)
-// require_once 'config.php'; 
+require_once 'config.php'; 
 
 // 1. KHỞI TẠO BIẾN MẶC ĐỊNH (Giữ cho UI không bị vỡ/lỗi khi chưa có kết nối DB thành công)
 $page_title     = "Alex Nguyễn - The Bunny Profile";
@@ -34,7 +33,6 @@ $current_user_id = 'UUID-123-456';
 // =====================================================================================
 // PHẦN 2: THỰC THI SQL (QUERY, PROCEDURE, TRIGGER)
 // =====================================================================================
-/* Bỏ comment đoạn này khi bạn đã nối DB thành công trong config.php
 
 try {
     // ---------------------------------------------------------------------------------
@@ -82,7 +80,6 @@ try {
 } catch (Exception $e) {
     $message_notify = "Lỗi kết nối CSDL: " . $e->getMessage();
 }
-*/
 ?>
 <!DOCTYPE html>
 <html lang="vi">
