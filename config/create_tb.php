@@ -23,78 +23,97 @@ if ($conn->query($sql_create_db) === TRUE) {
 // 3. CHỌN DATABASE ĐỂ THAO TÁC
 $conn->select_db(DB_NAME);
 
-// 4. KHAI BÁO MẢNG CHỨA CÁC CÂU LỆNH TẠO BẢNG
-$tables = [
-    // Bảng Người dùng
-    "users" => "
-        CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(255) NOT NULL UNIQUE,
-            password VARCHAR(255) NOT NULL,
-            ho_ten VARCHAR(255) NOT NULL,
-            role ENUM('student', 'teacher', 'admin') DEFAULT 'student',
-            avatar_url VARCHAR(255) DEFAULT NULL,
-            cover_url VARCHAR(255) DEFAULT NULL,
-            bio TEXT,
-            remember_token VARCHAR(64) DEFAULT NULL,
-            post_count INT DEFAULT 0,
-            ranking_score INT DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ",
-    // Bảng Bài đăng (Liên kết khóa ngoại với users)
-    "bai_dang" => "
-        CREATE TABLE IF NOT EXISTS bai_dang (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            noi_dung TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ",
-    // Bảng Hang thỏ (Nhóm học tập)
-    "hang_tho" => "
-        CREATE TABLE IF NOT EXISTS hang_tho (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            ten_nhom VARCHAR(255) NOT NULL,
-            mo_ta TEXT,
-            nguoi_tao_id INT NOT NULL,
-            cover_url VARCHAR(255) DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (nguoi_tao_id) REFERENCES users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ",
-    // Bảng Phòng Thách Đấu
-    "phong_thach_dau" => "
-        CREATE TABLE IF NOT EXISTS phong_thach_dau (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            creator_id INT NOT NULL,
-            acceptor_id INT DEFAULT NULL,
-            status ENUM('pending', 'accepted', 'completed') DEFAULT 'pending',
-            entry_fee INT DEFAULT 0,
-            reward_pool INT DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (acceptor_id) REFERENCES users(id) ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    "
-];
+// =====================================================
+// 4. THUẬT TOÁN ĐỌC VÀ THỰC THI FILE SQL
+// =====================================================
 
-// 5. THỰC THI LẦN LƯỢT CÁC LỆNH TẠO BẢNG
-echo "<ul class='list-group mb-4'>";
-foreach ($tables as $table_name => $sql) {
-    if ($conn->query($sql) === TRUE) {
-        echo "<li class='list-group-item list-group-item-success'>✅ Tạo bảng <strong>{$table_name}</strong> thành công!</li>";
-    } else {
-        echo "<li class='list-group-item list-group-item-danger'>❌ Lỗi khi tạo bảng <strong>{$table_name}</strong>: " . $conn->error . "</li>";
+// Đường dẫn tới file .sql của bạn (Hãy sửa lại tên file cho đúng với file của nhóm)
+$sql_file_path = 'the_bunny_db.sql';
+
+if (!file_exists($sql_file_path)) {
+    die("<div class='alert alert-danger'>❌ Không tìm thấy file SQL tại: <strong>$sql_file_path</strong>. Vui lòng kiểm tra lại đường dẫn!</div>");
+}
+
+// Đọc toàn bộ nội dung file SQL thành một mảng các dòng
+$lines = file($sql_file_path);
+
+$query = '';
+$delimiter = ';'; // Delimiter mặc định
+
+$success_count = 0;
+$error_count = 0;
+
+echo "<div class='p-3 bg-dark text-white rounded mb-3' style='max-height: 200px; overflow-y: auto; font-family: monospace;'>";
+
+foreach ($lines as $line) {
+
+    $trimmed_line = trim($line);
+
+    // Bỏ qua các dòng trống hoặc dòng comment (-- hoặc /*)
+    if (empty($trimmed_line) || strpos($trimmed_line, '--') === 0 || strpos($trimmed_line, '/*') === 0) {
+        continue;
+    }
+
+    // Bắt sự kiện đổi Delimiter (Ví dụ: DELIMITER $$)
+    if (preg_match('/^DELIMITER\s+(.*)$/i', $trimmed_line, $matches)) {
+        $delimiter = $matches[1]; // Cập nhật delimiter mới (vd: $$)
+        continue; // Bỏ qua dòng này không đưa vào query chạy
+    }
+
+    // Cộng dồn dòng hiện tại vào biến $query
+    $query .= $line;
+
+    // Nếu cuối chuỗi hiện tại có chứa delimiter --> Lệnh đã hoàn chỉnh, tiến hành thực thi
+    if (substr($trimmed_line, -strlen($delimiter)) === $delimiter) {
+
+        // Xóa delimiter ở cuối chuỗi để tránh lỗi cú pháp MySQL
+        $query_to_execute = substr($query, 0, -strlen($delimiter));
+
+        // Chạy câu lệnh SQL
+        if ($conn->query($query_to_execute) === TRUE) {
+
+            $success_count++;
+
+            echo "<div class='text-success'>✔ Thành công</div>";
+
+        } else {
+
+            $error_count++;
+
+            echo "<div class='text-danger'>❌ Lỗi: " . $conn->error . "</div>";
+        }
+
+        // Reset lại chuỗi để đọc lệnh tiếp theo
+        $query = '';
     }
 }
-echo "</ul>";
+
+echo "</div>";
 
 $conn->close();
 
-echo "<div class='text-center'>
-        <a href='../index.php' class='btn btn-success'>Quay về Trang Chủ / Đăng Nhập</a>
+
+// =====================================================
+// 5. HIỂN THỊ KẾT QUẢ TỔNG QUÁT
+// =====================================================
+
+if ($error_count === 0 && $success_count > 0) {
+
+    echo "<div class='alert alert-success'><h5>🎉 Import Database Thành Công!</h5>Đã thực thi <strong>$success_count</strong> khối lệnh (Bao gồm Bảng, Data, Trigger & Procedure).</div>";
+
+} elseif ($error_count > 0) {
+
+    echo "<div class='alert alert-warning'><h5>⚠ Import hoàn tất nhưng có lỗi</h5>Đã thực thi $success_count lệnh thành công, nhưng có <strong>$error_count</strong> lệnh bị lỗi. (Xem chi tiết trên khung đen).</div>";
+
+} else {
+
+    echo "<div class='alert alert-info'>Không có lệnh SQL nào được thực thi. Hãy kiểm tra lại nội dung file.</div>";
+}
+
+echo "<div class='text-center mt-4'>
+        <a href='../index.php' class='btn btn-success fw-bold px-4'>Vào Trang Chủ / Đăng Nhập</a>
       </div>";
+
 echo "</div></div></div></body></html>";
 ?>
+
