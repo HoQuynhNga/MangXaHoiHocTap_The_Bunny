@@ -101,15 +101,15 @@ try {
         </div>
 
         <div class="d-flex align-items-center gap-3">
-            <a href="thach-dau.html" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
+            <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
                 <i class="fa-solid fa-khanda"></i>
             </a>
             
-            <a href="tin-nhan.html" class="btn-icon text-decoration-none" title="Tin nhắn">
+            <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
                 <i class="fa-brands fa-facebook-messenger"></i>
             </a>
             
-            <a href="notifications.html" class="btn-icon text-decoration-none" title="Thông báo">
+            <a href="notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
                 <i class="fa-solid fa-bell"></i>
             </a>
             
@@ -118,7 +118,7 @@ try {
                 <span class="fw-bold fs-6">15</span>
             </div>
             
-            <a href="trang-ca-nhan.html">
+            <a href="trang-ca-nhan.php">
                 <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border cursor-pointer" width="40" height="40" alt="Profile">
             </a>
         </div>
