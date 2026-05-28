@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../db_module.php';
+require_once '../config/config.php';
 
 /** Avatar mặc định theo user id (bảng users chưa có cột avatar) */
 function inboxAvatar(int $userId): string
