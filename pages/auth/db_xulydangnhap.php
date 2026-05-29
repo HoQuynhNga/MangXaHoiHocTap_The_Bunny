@@ -1,6 +1,7 @@
 <?php
 // Gọi tệp config.php (Lùi ra 2 cấp thư mục: từ auth -> pages -> gốc)
 require_once '../../config/config.php';
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Lấy dữ liệu từ form index.php gửi sang
@@ -26,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $user = $result->fetch_assoc();
         
         // Kiểm tra mật khẩu (So sánh mk nhập vào với chuỗi băm Bcrypt trong DB)
-        if (password_verify($password, $user['password'])) {
+        if (password_verify($password, $user['password_hash'])) {
             // ✅ ĐĂNG NHẬP THÀNH CÔNG: Lưu định danh vào biến tạm Server (Session)
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username']  = $user['username'];
