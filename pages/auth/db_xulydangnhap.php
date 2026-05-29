@@ -16,7 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Viết câu lệnh truy vấn tìm User theo Email (Dùng Prepare để chống Hacking SQL Injection)
-    $stmt = $conn->prepare("SELECT id, password, ho_ten, role FROM users WHERE email = ? LIMIT 1");
+    $stmt = $conn->prepare("SELECT id, username, password_hash, user_type FROM users WHERE email = ? LIMIT 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -29,8 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (password_verify($password, $user['password'])) {
             // ✅ ĐĂNG NHẬP THÀNH CÔNG: Lưu định danh vào biến tạm Server (Session)
             $_SESSION['user_id'] = $user['id'];
-            $_SESSION['ho_ten']  = $user['ho_ten'];
-            $_SESSION['role']    = $user['role'];
+            $_SESSION['username']  = $user['username'];
+            $_SESSION['user_type']    = $user['user_type'];
 
             // Điều hướng bay thẳng vào Trang Chủ
             header("Location: ../../trang-chu.php");
