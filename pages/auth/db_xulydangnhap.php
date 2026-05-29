@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['user_type']    = $user['user_type'];
 
             // Điều hướng bay thẳng vào Trang Chủ
-            header("Location: ../../trang-chu.php");
+            header("Location: ../trang-chu.php");
             exit();
         } else {
             // ❌ Sai mật khẩu: Bật thông báo và đẩy về trang cũ
