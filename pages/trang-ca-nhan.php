@@ -1,716 +1,1396 @@
 <?php
+/**
+ * =========================================================================================
+ * ĐỒ ÁN MÔN HỌC: XÂY DỰNG WEBSITE MẠNG XÃ HỘI HỌC TẬP THE BUNNY
+ * Tệp tin: trang-ca-nhan.php
+ * Chức năng: Hiển thị hồ sơ cá nhân, dòng thời gian, tài liệu, sự kiện và bạn bè.
+ * Xử lý: Đăng bài, Cập nhật thông tin, Thêm tài liệu, Tạo sự kiện (Tương tác trực tiếp DB).
+ * =========================================================================================
+ */
+
+// [GIẢI THÍCH PHP]: Bắt đầu phiên làm việc (Session). Hàm này bắt buộc phải gọi trước khi
+// có bất kỳ output HTML nào được gửi về trình duyệt. Nó giúp truy xuất định danh người dùng.
 session_start();
 
-// =====================================================================================
-// PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
-// =====================================================================================
-
+// [GIẢI THÍCH PHP]: Gọi tệp cấu hình chứa các hằng số kết nối Cơ sở dữ liệu.
+// Sử dụng require_once để đảm bảo tệp cấu hình chỉ được gọi một lần duy nhất, tránh lỗi redeclare.
 require_once '../config/config.php'; 
 
-// 1. KHỞI TẠO BIẾN MẶC ĐỊNH (Giữ cho UI không bị vỡ/lỗi khi chưa có kết nối DB thành công)
-$page_title     = "Alex Nguyễn - The Bunny Profile";
-$user_name      = "Alex Nguyễn";
-$user_avatar    = "https://i.pravatar.cc/150?img=12";
-$user_cover     = "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80";
-$user_bio       = "Định hướng UI/UX & Kinh doanh (Babe Nobuli)";
-$is_verified    = true;
+// =========================================================================================
+// PHẦN 1: ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH (HELPER FUNCTIONS) XỬ LÝ NGHIỆP VỤ
+// =========================================================================================
 
-$stats_fire     = 15;
-$stats_xp       = "1,520";
-$stats_buddies  = 124;
-$stats_docs     = 45;
-
-$about_quote    = '"Kiến thức là nền tảng, thiết kế là giải pháp."';
-$about_edu      = "Đang học <b>Lớp 9</b> - Mục tiêu: Chuyên Lý";
-$about_job      = "Founder & Thiết kế UI/UX tại <b>Babe Nobuli</b>";
-$about_loc      = "Sống tại <b>TP. Hồ Chí Minh</b>";
-
-$message_notify = ""; // Biến dùng để hiện thông báo khi chạy thành công
-
-// [SỬA]: Giả lập ID của Alex đang đăng nhập (Khớp với INT AUTO_INCREMENT trong MySQL)
-$current_user_id = 1; 
-
-// =====================================================================================
-// PHẦN 2: THỰC THI SQL (QUERY VÀ INSERT)
-// =====================================================================================
-// 1. KHỞI TẠO KẾT NỐI PDO TỪ CÁC HẰNG SỐ TRONG config.php
-try {
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-    $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Bật báo lỗi Exception
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // Mặc định fetch ra mảng kết hợp
-        PDO::ATTR_EMULATE_PREPARES   => false,                  // Bảo mật chống SQL Injection
-    ];
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-} catch (PDOException $e) {
-    die("Lỗi kết nối PDO: " . $e->getMessage());
+/**
+ * Hàm lọc dữ liệu đầu vào (Sanitize Input)
+ * [GIẢI THÍCH PHP]: Ngăn chặn tấn công XSS (Cross-Site Scripting) bằng cách loại bỏ
+ * khoảng trắng thừa, xóa các thẻ HTML độc hại và chuyển đổi ký tự đặc biệt.
+ */
+function sanitize_input($data) {
+    if (is_null($data)) return "";
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
 }
 
+/**
+ * Hàm tính thời gian trôi qua (Time Ago)
+ * [GIẢI THÍCH PHP]: Chuyển đổi timestamp từ cơ sở dữ liệu thành chuỗi hiển thị
+ * thân thiện với người dùng mạng xã hội (VD: "Vừa xong", "5 phút trước", "2 giờ trước").
+ */
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
+
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
+
+    $string = array(
+        'y' => 'năm',
+        'm' => 'tháng',
+        'w' => 'tuần',
+        'd' => 'ngày',
+        'h' => 'giờ',
+        'i' => 'phút',
+        's' => 'giây',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v;
+        } else {
+            unset($string[$k]);
+        }
+    }
+
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' trước' : 'Vừa xong';
+}
+
+/**
+ * Tạo CSRF Token (Cross-Site Request Forgery)
+ * [GIẢI THÍCH PHP]: Tạo một mã thông báo ngẫu nhiên lưu vào Session để đính kèm
+ * vào các Form. Khi nhận POST request, server sẽ đối chiếu token này để đảm bảo
+ * request thực sự xuất phát từ website The Bunny, ngăn chặn hacker giả mạo.
+ */
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
+// =====================================================================================
+// PHẦN 2: KHỞI TẠO BIẾN TRỐNG (MẶC ĐỊNH LÀ RỖNG, KHÔNG SỬ DỤNG DỮ LIỆU MẪU)
+// =====================================================================================
+
+// [GIẢI THÍCH PHP]: Khởi tạo tất cả các biến hiển thị bằng giá trị rỗng hoặc mặc định an toàn.
+// Việc này giúp tránh lỗi "Undefined variable" khi mã HTML bên dưới gọi đến chúng
+// trong trường hợp truy vấn CSDL thất bại hoặc bảng CSDL đang rỗng.
+
+$page_title          = "Trang cá nhân";
+
+// Biến thông tin định danh cơ bản (Bảng users)
+$user_name           = "";
+$user_type           = "";
+$truong_hoc          = "";
+$truong_dai_hoc      = "";
+$is_verified         = false;
+
+// Biến thông tin mở rộng (Bảng ho_so_ca_nhan)
+$thong_tin_dinh_danh = "";
+
+// Do cấu trúc DB của bạn không có cột lưu đường dẫn ảnh, ta gán đường dẫn ảnh tĩnh
+$user_avatar         = "assets/images/default-avatar.png";
+$user_cover          = "assets/images/default-cover.png";
+
+// Khởi tạo các biến thống kê dạng số nguyên (Integer)
+$stats_xp            = 0;
+$stats_buddies       = 0;
+$stats_docs          = 0;
+$stats_fire          = 0;
+
+// Khởi tạo biến lưu trữ thông báo và màu sắc thông báo của Bootstrap
+$message_notify      = ""; 
+$message_type        = "success"; 
+
+// [GIẢI THÍCH PHP]: Lấy ID người dùng từ Session. Trong môi trường test chưa có chức năng
+// đăng nhập hoàn chỉnh, biến này có thể null nên dùng toán tử ?? gán mặc định là 1.
+$current_user_id     = $_SESSION['user_id'] ?? 1; 
+
+// Khởi tạo các mảng dữ liệu rỗng để dùng cho vòng lặp ở giao diện
+$posts_data          = [];
+$buddies_data        = [];
+$docs_data           = [];
+$events_data         = [];
+
+// =====================================================================================
+// PHẦN 3: KẾT NỐI PDO ĐẾN HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU MYSQL
+// =====================================================================================
+
+try {
+    // [GIẢI THÍCH PHP]: Xây dựng chuỗi DSN kết nối. DB_HOST, DB_NAME, DB_CHARSET 
+    // đã được định nghĩa bằng hàm define() trong tệp config.php.
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    
+    // [GIẢI THÍCH PHP]: Cấu hình các cờ cho PHP Data Objects (PDO)
+    $options = [
+        // Chuyển chế độ báo lỗi thành Exception để khối try-catch có thể bắt được.
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
+        // Dữ liệu lấy ra luôn ở dạng mảng kết hợp (Associative Array).
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       
+        // Vô hiệu hóa mô phỏng prepared statements, buộc MySQL tự chuẩn bị câu lệnh
+        // giúp bảo mật tuyệt đối chống lại tấn công SQL Injection.
+        PDO::ATTR_EMULATE_PREPARES   => false,                  
+    ];
+    
+    // [GIẢI THÍCH PHP]: Tạo thực thể kết nối.
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    
+} catch (PDOException $e) {
+    // [GIẢI THÍCH PHP]: Dừng toàn bộ hệ thống ngay lập tức nếu không thể kết nối tới DB.
+    die("Hệ thống gián đoạn. Không thể kết nối cơ sở dữ liệu: " . $e->getMessage());
+}
+
+// =====================================================================================
+// PHẦN 4: TIẾP NHẬN YÊU CẦU POST VÀ THỰC THI THÊM/SỬA DỮ LIỆU (INSERT/UPDATE)
+// =====================================================================================
+
+// [GIẢI THÍCH PHP]: Đặt toàn bộ luồng xử lý POST vào try-catch để kiểm soát lỗi cục bộ
+try {
+    // Lệnh IF kiểm tra phương thức HTTP có phải là POST và chứa thuộc tính action không
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
+        
+        // [KIỂM TRA BẢO MẬT]: Xác thực CSRF Token
+        if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+            throw new Exception("Lỗi bảo mật: Token không hợp lệ. Vui lòng tải lại trang.");
+        }
+        
+        // Gán biến action để chia luồng xử lý bằng cấu trúc switch-case
+        $action = sanitize_input($_POST['action']);
+
+        switch ($action) {
+            
+            // -------------------------------------------------------------------------
+            // LUỒNG 1: XỬ LÝ ĐĂNG BÀI VIẾT LÊN DÒNG THỜI GIAN
+            // -------------------------------------------------------------------------
+            case 'add_post':
+                if (!empty($_POST['noidung_post'])) {
+                    $content = sanitize_input($_POST['noidung_post']);
+                    
+                    // [GIẢI THÍCH SQL]: Gọi Stored Procedure create_post đã được viết ở Chương 4.
+                    // Procedure này nhận 5 tham số. Do chưa code tính năng đính kèm file, 
+                    // 3 tham số cuối được gán cứng giá trị NULL.
+                    $sql_call_proc = "CALL create_post(:uid, :content, NULL, NULL, NULL)";
+                    $stmt = $pdo->prepare($sql_call_proc);
+                    
+                    // Thực thi Procedure
+                    $stmt->execute([
+                        'uid'     => $current_user_id, 
+                        'content' => $content
+                    ]);
+                    
+                    // Ghi nhận phản hồi thành công
+                    $message_notify = "Đã xuất bản bài đăng thành công!";
+                    $message_type   = "success";
+                } else {
+                    throw new Exception("Nội dung bài viết không được để trống.");
+                }
+                break;
+                
+            // -------------------------------------------------------------------------
+            // LUỒNG 2: XỬ LÝ CẬP NHẬT THÔNG TIN HỒ SƠ
+            // -------------------------------------------------------------------------
+            case 'edit_profile':
+                // Tiến hành làm sạch dữ liệu từ Form gửi lên
+                $username       = sanitize_input($_POST['username'] ?? '');
+                $truong_hoc     = sanitize_input($_POST['truong_hoc'] ?? '');
+                $truong_dai_hoc = sanitize_input($_POST['truong_dai_hoc'] ?? '');
+                $tt_dinh_danh   = sanitize_input($_POST['thong_tin_dinh_danh'] ?? '');
+
+                // [BƯỚC 1]: Cập nhật bảng 'users' (Chứa các thông tin cấu trúc cứng)
+                $sql_update_users = "
+                    UPDATE users 
+                    SET 
+                        username       = :uname, 
+                        truong_hoc     = :thoc, 
+                        truong_dai_hoc = :tdhoc 
+                    WHERE id = :id
+                ";
+                $stmt1 = $pdo->prepare($sql_update_users);
+                $stmt1->execute([
+                    'uname' => $username, 
+                    'thoc'  => $truong_hoc, 
+                    'tdhoc' => $truong_dai_hoc, 
+                    'id'    => $current_user_id
+                ]);
+
+                // [BƯỚC 2]: Cập nhật bảng 'ho_so_ca_nhan'
+                // [GIẢI THÍCH SQL]: Bảng này có cấu trúc 1-1 với users. Tuy nhiên, lúc mới
+                // tạo tài khoản có thể chưa có dòng nào trong bảng này. Ta dùng cơ chế
+                // INSERT ... ON DUPLICATE KEY UPDATE để tự động chèn mới hoặc ghi đè.
+                $sql_upsert_profile = "
+                    INSERT INTO ho_so_ca_nhan (user_id, thong_tin_dinh_danh) 
+                    VALUES (:id, :ttdd) 
+                    ON DUPLICATE KEY UPDATE 
+                        thong_tin_dinh_danh = VALUES(thong_tin_dinh_danh)
+                ";
+                $stmt2 = $pdo->prepare($sql_upsert_profile);
+                $stmt2->execute([
+                    'id'   => $current_user_id, 
+                    'ttdd' => $tt_dinh_danh
+                ]);
+                
+                $message_notify = "Hồ sơ năng lực của bạn đã được lưu!";
+                $message_type   = "success";
+                break;
+
+            // -------------------------------------------------------------------------
+            // LUỒNG 3: XỬ LÝ TẢI LÊN TÀI LIỆU HỌC TẬP
+            // -------------------------------------------------------------------------
+            case 'add_document':
+                $doc_name = sanitize_input($_POST['ten_tai_lieu'] ?? 'Tài liệu vô danh');
+                // Gán tĩnh phần định dạng và dung lượng do chưa tích hợp $_FILES
+                $loai_file  = "PDF"; 
+                $kich_thuoc = 2048; 
+                
+                $sql_insert_doc = "
+                    INSERT INTO tai_lieu 
+                        (user_id, ten_tai_lieu, loai_file, kich_thuoc, luot_tai, created_at) 
+                    VALUES 
+                        (:uid, :name, :type, :size, 0, NOW())
+                ";
+                $stmt = $pdo->prepare($sql_insert_doc);
+                $stmt->execute([
+                    'uid'  => $current_user_id, 
+                    'name' => $doc_name, 
+                    'type' => $loai_file, 
+                    'size' => $kich_thuoc
+                ]);
+                
+                $message_notify = "Đóng góp tài liệu học tập thành công!";
+                $message_type   = "success";
+                break;
+
+            // -------------------------------------------------------------------------
+            // LUỒNG 4: XỬ LÝ TẠO SỰ KIỆN LỊCH TRÌNH VÀ PHÂN QUYỀN THÀNH VIÊN
+            // -------------------------------------------------------------------------
+            case 'add_event':
+                $event_name = sanitize_input($_POST['ten_su_kien'] ?? 'Sự kiện The Bunny');
+                $event_date = !empty($_POST['ngay_su_kien']) ? $_POST['ngay_su_kien'] : date('Y-m-d H:i:s');
+                $event_loc  = sanitize_input($_POST['dia_diem'] ?? '');
+                
+                // [BƯỚC 1]: Thêm dữ liệu vào bảng su_kien (Không chèn user_id ở đây)
+                $sql_insert_event = "
+                    INSERT INTO su_kien 
+                        (tieu_de, thoi_gian, created_at) 
+                    VALUES 
+                        (:name, :date, NOW())
+                ";
+                $stmt = $pdo->prepare($sql_insert_event);
+                $stmt->execute([
+                    'name' => $event_name, 
+                    'date' => $event_date, 
+                    'loc'  => $event_loc
+                ]);
+                
+                // [BƯỚC 2]: Lấy ID của sự kiện vừa được chèn thành công vào CSDL
+                // PDO hỗ trợ hàm lastInsertId() cực kỳ tiện lợi cho các bảng có Khóa chính AUTO_INCREMENT
+                $new_event_id = $pdo->lastInsertId();
+                
+                // [BƯỚC 3]: Chèn user hiện tại vào bảng thanh_vien_su_kien và gán quyền Host/Admin
+                $sql_insert_member = "
+                    INSERT INTO thanh_vien_su_kien 
+                        (su_kien_id, user_id, vai_tro, joined_at) 
+                    VALUES 
+                        (:event_id, :uid, 'Quan_tri_vien', NOW())
+                ";
+                $stmt_member = $pdo->prepare($sql_insert_member);
+                $stmt_member->execute([
+                    'event_id' => $new_event_id,
+                    'uid'      => $current_user_id
+                ]);
+                
+                $message_notify = "Lên lịch sự kiện học thuật thành công!";
+                $message_type   = "success";
+                break;
+        
+        // [GIẢI THÍCH PHP]: Kỹ thuật PRG (Post/Redirect/Get)
+        // Nếu có thông báo thành công, ta mã hóa url và chuyển hướng trang.
+        // Điều này ngăn chặn trình duyệt hiển thị hộp thoại "Confirm Form Resubmission"
+        // khó chịu khi người dùng ấn nút F5 để tải lại trang.
+        if($message_notify != "" && $message_type == "success") {
+            $safe_msg = urlencode($message_notify);
+            $safe_type = urlencode($message_type);
+            // Dùng hàm header để điều hướng
+            header("Location: " . $_SERVER['PHP_SELF'] . "?msg=" . $safe_msg . "&type=" . $safe_type);
+            // Giải phóng tiến trình
+            exit;
+        }
+    }
+
+} catch (Exception $e) {
+    // Bắt lỗi phát sinh trong quá trình thực thi POST
+    $message_notify = "Lỗi xử lý yêu cầu: " . $e->getMessage();
+    $message_type   = "danger"; // Báo màu đỏ cho giao diện Bootstrap
+}
+
+// Bắt lấy thông báo từ cấu trúc URL (Nếu vừa trải qua quá trình PRG Redirect)
+if (isset($_GET['msg']) && isset($_GET['type'])) {
+    $message_notify = sanitize_input($_GET['msg']);
+    $message_type   = sanitize_input($_GET['type']);
+}
+
+// =====================================================================================
+// PHẦN 5: THỰC THI TRUY VẤN LẤY DỮ LIỆU ĐỂ RENDER (KẾT XUẤT) RA GIAO DIỆN
+// =====================================================================================
+
 try {
     // ---------------------------------------------------------------------------------
-    // [1] NỐI QUERY: Lấy thông tin người dùng từ Database đắp vào giao diện
-    // [SỬA]: Dùng Subqueries thay cho bảng UserStats không tồn tại, sửa tên bảng/cột chuẩn.
+    // [TRUY VẤN 1]: LẤY DỮ LIỆU ĐỊNH DANH VÀ THỐNG KÊ (BẢNG USERS VÀ HO_SO_CA_NHAN)
     // ---------------------------------------------------------------------------------
-    $sql_query = "SELECT 
-                    u.username, 
-                    h.thong_tin_dinh_danh,
-                    (SELECT IFNULL(SUM(diem_so), 0) FROM phien_luyen_tap WHERE user_id = u.id) AS xp_carrots,
-                    (SELECT COUNT(*) FROM ban_cung_tien WHERE (user_id = u.id OR friend_user_id = u.id) AND status = 'Accepted') AS buddy_count,
-                    (SELECT COUNT(*) FROM tai_lieu WHERE user_id = u.id) AS document_count
-                  FROM users u 
-                  LEFT JOIN ho_so_ca_nhan h ON u.id = h.user_id 
-                  WHERE u.id = :id";
-                  
-    $stmt = $pdo->prepare($sql_query);
-    $stmt->execute(['id' => $current_user_id]);
+    $sql_profile = "
+        SELECT 
+            u.username, 
+            u.user_type, 
+            u.truong_hoc, 
+            u.truong_dai_hoc, 
+            u.giay_to_chung_minh,
+            h.thong_tin_dinh_danh,
+            (SELECT IFNULL(SUM(diem_so), 0) FROM phien_luyen_tap WHERE user_id = u.id) AS xp_carrots,
+            (SELECT COUNT(*) FROM ban_cung_tien WHERE (user_id = u.id OR friend_user_id = u.id) AND status = 'Accepted') AS buddy_count,
+            (SELECT COUNT(*) FROM tai_lieu WHERE user_id = u.id) AS document_count
+        FROM 
+            users u 
+        LEFT JOIN 
+            ho_so_ca_nhan h ON u.id = h.user_id 
+        WHERE 
+            u.id = :id
+    ";
     
-    if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        // Ghi đè biến mặc định bằng dữ liệu thật từ SQL
-        $user_name      = $row['username'];
-        $user_bio       = $row['thong_tin_dinh_danh'] ?? $user_bio; // Dự phòng nếu null
-        $stats_xp       = number_format($row['xp_carrots']);
-        $stats_buddies  = $row['buddy_count'];
-        $stats_docs     = $row['document_count'];
+    // Nạp câu lệnh vào bộ chuẩn bị
+    $stmt_profile = $pdo->prepare($sql_profile);
+    // Gắn tham số ID động vào dấu :id
+    $stmt_profile->execute(['id' => $current_user_id]);
+    
+    // Lấy 1 bản ghi duy nhất, gán đè vào các biến trống đã khai báo ở Phần 2
+    if ($row_profile = $stmt_profile->fetch()) {
+        $user_name           = $row_profile['username'] ?? "Tài khoản ẩn danh";
+        $page_title          = $user_name . " - Mạng xã hội học tập The Bunny"; 
+        
+        $user_type           = $row_profile['user_type'] ?? "";
+        $truong_hoc          = $row_profile['truong_hoc'] ?? "";
+        $truong_dai_hoc      = $row_profile['truong_dai_hoc'] ?? "";
+        
+        // Cấp phát Tích xanh (is_verified) nếu cột giay_to_chung_minh có chứa dữ liệu
+        $is_verified         = (!empty($row_profile['giay_to_chung_minh'])) ? true : false;
+        
+        $thong_tin_dinh_danh = $row_profile['thong_tin_dinh_danh'] ?? ""; 
+        
+        $stats_xp            = (int)$row_profile['xp_carrots'];
+        $stats_buddies       = (int)$row_profile['buddy_count'];
+        $stats_docs          = (int)$row_profile['document_count'];
     }
 
     // ---------------------------------------------------------------------------------
-    // [2] XỬ LÝ ĐĂNG BÀI: (Khi user gõ vào thẻ input và ấn Enter)
+    // [TRUY VẤN 2]: LẤY DANH SÁCH DÒNG THỜI GIAN (BẢNG BAI_DANG)
     // ---------------------------------------------------------------------------------
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['noidung_post']) && !empty($_POST['noidung_post'])) {
-        $content = $_POST['noidung_post'];
-        
-        // [SỬA]: Dùng lệnh INSERT INTO chuẩn của MySQL thay cho EXEC của SQL Server
-        $insert_stmt = $pdo->prepare("INSERT INTO bai_dang (user_id, noi_dung) VALUES (:uid, :noidung)");
-        $insert_stmt->execute([
-            'uid' => $current_user_id,
-            'noidung' => $content
-        ]);
-        
-        $message_notify = "Đăng bài thành công! (Dữ liệu đã vào DB)";
-    }
-} catch (PDOException $e) { // [SỬA]: Bắt lỗi PDOException cụ thể hơn
-    $message_notify = "Lỗi kết nối CSDL: " . $e->getMessage();
+    $sql_posts = "
+        SELECT 
+            b.id, 
+            b.noi_dung, 
+            b.created_at, 
+            u.username, 
+            u.giay_to_chung_minh 
+        FROM 
+            bai_dang b 
+        INNER JOIN 
+            users u ON b.user_id = u.id 
+        WHERE 
+            b.user_id = :id 
+        ORDER BY 
+            b.created_at DESC
+    ";
+    $stmt_posts = $pdo->prepare($sql_posts);
+    $stmt_posts->execute(['id' => $current_user_id]);
+    // Nạp tất cả kết quả vào mảng
+    $posts_data = $stmt_posts->fetchAll();
+
+    // ---------------------------------------------------------------------------------
+    // [TRUY VẤN 3]: LẤY DANH SÁCH BẠN CÙNG TIẾN (BẢNG BAN_CUNG_TIEN VÀ USERS)
+    // ---------------------------------------------------------------------------------
+    // [GIẢI THÍCH SQL]: Mệnh đề INNER JOIN cực kỳ tinh tế. Do tài khoản của ta
+    // có thể đóng vai trò là người gửi (user_id) hoặc người nhận (friend_user_id)
+    // trong quan hệ bạn bè, ta phải dùng OR trong điều kiện ON để lấy đúng người còn lại.
+    $sql_buddies = "
+        SELECT 
+            u.id, 
+            u.username, 
+            u.truong_hoc 
+        FROM 
+            ban_cung_tien f 
+        INNER JOIN 
+            users u ON (u.id = f.friend_user_id OR u.id = f.user_id) 
+        WHERE 
+            (f.user_id = :id OR f.friend_user_id = :id) 
+            AND f.status = 'Accepted' 
+            AND u.id != :id
+    ";
+    $stmt_buddies = $pdo->prepare($sql_buddies);
+    $stmt_buddies->execute(['id' => $current_user_id]);
+    $buddies_data = $stmt_buddies->fetchAll();
+
+    // ---------------------------------------------------------------------------------
+    // [TRUY VẤN 4]: LẤY DANH SÁCH KHO TÀI LIỆU SỐ
+    // ---------------------------------------------------------------------------------
+    $sql_docs = "
+        SELECT 
+            id, 
+            ten_tai_lieu, 
+            file_, 
+            created_at 
+        FROM 
+            tai_lieu 
+        WHERE 
+            user_id = :id 
+        ORDER BY 
+            created_at DESC
+    ";
+    $stmt_docs = $pdo->prepare($sql_docs);
+    $stmt_docs->execute(['id' => $current_user_id]);
+    $docs_data = $stmt_docs->fetchAll();
+
+    // ---------------------------------------------------------------------------------
+    // [TRUY VẤN 5]: LẤY DANH SÁCH SỰ KIỆN HỌC THUẬT QUẢN LÝ QUA BẢNG TRUNG GIAN
+    // ---------------------------------------------------------------------------------
+    // [GIẢI THÍCH SQL]: Thay vì tìm 'nguoi_tao_id', ta dùng INNER JOIN nối bảng 'su_kien' (sk)
+    // với bảng 'thanh_vien_su_kien' (tv). Điều kiện lọc (WHERE) sẽ dò xem user hiện tại
+    // có tồn tại trong bảng thành viên của sự kiện đó hay không.
+    $sql_events = "
+        SELECT 
+            sk.id, 
+            sk.tieu_de,  
+            sk.thoi_gian 
+        FROM 
+            su_kien sk
+        INNER JOIN 
+            thanh_vien_su_kien tv ON sk.id = tv.su_kien_id
+        WHERE 
+            tv.user_id = :id 
+        ORDER BY 
+            sk.thoi_gian ASC
+    ";
+    
+    $stmt_events = $pdo->prepare($sql_events);
+    // Truyền ID của người dùng vào tham số truy vấn
+    $stmt_events->execute(['id' => $current_user_id]);
+    // Nạp toàn bộ sự kiện mà người dùng này tham gia vào mảng
+    $events_data = $stmt_events->fetchAll();
+
+} catch (PDOException $e) { 
+    // Bắt lỗi ngoại lệ ở tầng SELECT dữ liệu
+    $message_notify = "Lỗi kỹ thuật trong quá trình truy xuất thông tin hệ thống: " . $e->getMessage();
+    $message_type = "danger";
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $page_title; ?></title>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <title><?= htmlspecialchars($page_title); ?></title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="./assets/css/root.css" rel="stylesheet">
-    <link href="./assets/css/trang-ca-nhan.css" rel="stylesheet">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="../assets/css/root.css" rel="stylesheet">
+    <link href="../assets/css/trang-ca-nhan.css" rel="stylesheet">
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="../assets/js/trang-ca-nhan.js" defer></script>
+    <script defer>
+        // Lệnh kích hoạt hiệu ứng Tooltip của Bootstrap sau khi DOM sẵn sàng
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
 </head>
-<body>
 
-    <nav class="navbar navbar-expand-lg navbar-bunny fixed-top shadow-sm">
-    <div class="container-fluid px-3 px-md-4 max-w-1100 mx-auto d-flex justify-content-between align-items-center">
-        
-        <div class="d-flex align-items-center gap-3">
-            <button class="btn btn-action d-md-none rounded-circle p-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileOffcanvas">
-                <i class="fa-solid fa-bars fs-5 text-dark"></i>
-            </button>
+<body class="bg-light">
+
+    <?php if($message_notify != ""): ?>
+        <div 
+            class="alert alert-<?= htmlspecialchars($message_type); ?> alert-dismissible fade show text-center m-0 rounded-0 shadow-sm border-0" 
+            role="alert"
+            aria-live="assertive"
+        >
+            <i class="fa-solid fa-circle-info me-2"></i>
+            <strong>Hệ thống:</strong> <?= htmlspecialchars($message_notify); ?>
             
-            <a href="trang-chu.php" class="navbar-brand fw-bold fs-4 m-0 d-flex align-items-center gap-2 text-decoration-none" style="color: var(--bunny-primary);">
-                <i class="fa-solid fa-carrot"></i> <span class="d-none d-sm-inline">The Bunny</span>
+            <button 
+                type="button" 
+                class="btn-close" 
+                data-bs-dismiss="alert" 
+                aria-label="Đóng thông báo"
+            ></button>
+        </div>
+    <?php endif; ?>
+
+    <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            
+            <a class="navbar-brand fw-bold text-primary fs-3 d-flex align-items-center gap-2" href="#">
+                <i class="fa-solid fa-carrot text-warning"></i>
+                <span>The Bunny</span>
             </a>
             
-            <div class="search-bar d-none d-md-flex">
-                <i class="fa-solid fa-search text-muted"></i>
-                <input type="text" placeholder="Tìm kiếm tài liệu, dự án, bạn học...">
-            </div>
-        </div>
-
-        <div class="d-none d-md-flex align-items-center gap-4">
-            <a href="thach-dau.php" class="btn btn-action rounded-circle p-2 text-decoration-none" title="Thách đấu">
-                <i class="fa-solid fa-khanda fs-5"></i>
-            </a>
+            <form class="d-none d-lg-flex w-50" role="search">
+                <div class="input-group">
+                    <span class="input-group-text bg-light border-end-0" id="search-addon">
+                        <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                    </span>
+                    <input type="search" class="form-control bg-light border-start-0 ps-0" placeholder="Tìm kiếm bạn học, tài liệu..." aria-label="Search" aria-describedby="search-addon">
+                </div>
+            </form>
             
-            <a href="notifications.html" class="btn btn-action rounded-circle p-2 text-decoration-none" title="Thông báo">
-                <i class="fa-solid fa-bell fs-5"></i>
-            </a>
-            
-            <a href="tin-nhan.php" class="btn btn-action rounded-circle p-2 text-decoration-none" title="Tin nhắn">
-                <i class="fa-brands fa-facebook-messenger fs-5"></i>
-            </a>
-            
-            <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border">
-                <i class="fa-solid fa-fire text-danger"></i>
-                <span class="fw-bold fs-6"><?= $stats_fire; ?></span>
-            </div>
-        </div>
-
-        <a href="trang-ca-nhan.php">
-            <img src="<?= $user_avatar; ?>" alt="<?= $user_name; ?>" class="rounded-circle border cursor-pointer" width="40" height="40">
-        </a>
-    </div>
-</nav>
-    <div class="offcanvas offcanvas-start offcanvas-bunny" tabindex="-1" id="mobileOffcanvas" aria-labelledby="mobileOffcanvasLabel">
-        <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title fw-bold m-0 d-flex align-items-center gap-2" id="mobileOffcanvasLabel" style="color: var(--bunny-primary);">
-                <i class="fa-solid fa-carrot"></i> The Bunny
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body p-3">
-            <div class="search-bar w-100 mb-4 d-flex">
-                <i class="fa-solid fa-search text-muted"></i>
-                <input type="text" placeholder="Tìm kiếm...">
-            </div>
-            
-            <h6 class="text-muted fw-bold small text-uppercase mb-3 px-3">Menu</h6>
-            <div class="d-flex flex-column gap-1 mb-4">
-                <button class="nav-link-custom active"><i class="fa-solid fa-house w-20px"></i> Bảng tin</button>
-                <button class="nav-link-custom"><i class="fa-solid fa-user-group w-20px"></i> Nhóm học tập</button>
-                <button class="nav-link-custom"><i class="fa-solid fa-khanda w-20px"></i> Thách đấu</button>
-                <button class="nav-link-custom"><i class="fa-solid fa-bell w-20px"></i> Thông báo</button>
-                <button class="nav-link-custom"><i class="fa-brands fa-facebook-messenger w-20px"></i> Tin nhắn</button>
-            </div>
-            
-            <h6 class="text-muted fw-bold small text-uppercase mb-3 px-3">Cá nhân</h6>
-            <div class="d-flex flex-column gap-1">
-                <button class="nav-link-custom"><i class="fa-solid fa-bookmark w-20px"></i> Đã lưu</button>
-                <button class="nav-link-custom"><i class="fa-solid fa-gear w-20px"></i> Cài đặt</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="cover-block mt-md-3 animate-slide-up">
-        <div class="w-100 h-100 d-flex justify-content-center align-items-center text-white" style="background: url('<?= $user_cover; ?>') center/cover;">
-        </div>
-        <button class="btn-edit-cover"><i class="fa-solid fa-camera me-2 d-none d-sm-inline"></i>Sửa bìa</button>
-    </div>
-
-    <div class="info-block animate-slide-up" style="animation-delay: 0.1s;">
-        
-        <div class="profile-layout">
-            <div class="avatar-container">
-                <img src="<?= $user_avatar; ?>" alt="<?= $user_name; ?>" class="avatar-img">
-                <div class="status-badge" title="Đang học bài"></div>
-            </div>
-            
-            <div class="info-content w-100">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-start">
-                    <div class="text-center text-md-start">
-                        <div class="profile-name-wrapper">
-                            <h1 class="profile-name"><?= $user_name; ?></h1>
-                            <?php if($is_verified): ?>
-                                <i class="fa-solid fa-circle-check verified-tick" title="Học sinh xác thực"></i>
-                            <?php endif; ?>
-                        </div>
-                        <p class="text-muted fw-medium fs-5 m-0 mb-3 mb-md-0"><?= $user_bio; ?></p>
-                        
-                        <div class="profile-stats">
-                            <div class="stat-item">
-                                <span class="stat-value"><?= $stats_xp; ?></span>
-                                <span class="stat-label">Cà rốt (XP)</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value"><?= $stats_buddies; ?></span>
-                                <span class="stat-label">Bạn cùng tiến</span>
-                            </div>
-                            <div class="stat-item">
-                                <span class="stat-value"><?= $stats_docs; ?></span>
-                                <span class="stat-label">Tài liệu</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="action-buttons mt-4 mt-md-0">
-                        <button class="btn btn-primary-bunny" onclick="triggerChallenge()"><i class="fa-solid fa-khanda me-2"></i>Thách đấu</button>
-                        <button class="btn btn-light fw-bold border"><i class="fa-solid fa-user-plus me-2 d-none d-sm-inline"></i>Thêm bạn</button>
-                        <button class="btn btn-light fw-bold border px-3"><i class="fa-solid fa-ellipsis"></i></button>
-                    </div>
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-light rounded-circle text-muted shadow-sm position-relative" aria-label="Thông báo">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                        <span class="visually-hidden">Thông báo mới</span>
+                    </span>
+                </button>
+                <button class="btn btn-light rounded-circle text-muted shadow-sm" aria-label="Tin nhắn">
+                    <i class="fa-solid fa-message"></i>
+                </button>
+                
+                <div class="dropdown">
+                    <button class="btn border-0 p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border shadow-sm" width="40" height="40" style="object-fit: cover;" alt="Menu người dùng">
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                        <li><a class="dropdown-item fw-medium" href="#"><i class="fa-solid fa-gear me-2"></i>Cài đặt tài khoản</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item fw-medium text-danger" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
+                    </ul>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <ul class="nav profile-tabs" id="myTab" role="tablist">
-            <li class="nav-item"><button class="nav-link-custom active" data-bs-toggle="tab" data-bs-target="#timeline">Dòng thời gian</button></li>
-            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#about">Giới thiệu</button></li>
-            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#buddies">Bạn cùng tiến</button></li>
-            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#library">Tài liệu</button></li>
-            <li class="nav-item"><button class="nav-link-custom" data-bs-toggle="tab" data-bs-target="#events">Sự kiện</button></li>
-            <li class="nav-item"><button class="nav-link-custom text-warning" data-bs-toggle="tab" data-bs-target="#battles"><i class="fa-solid fa-trophy me-1"></i> Sàn đấu</button></li>
-        </ul>
-    </div>
-
-    <div class="container max-w-1100 mx-auto mt-4 pb-5">
-        <div class="tab-content" id="myTabContent">
+    <div class="container mt-4 mb-5">
+        
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4 bg-white">
             
-            <div class="tab-pane fade show active" id="timeline">
+            <div 
+                class="card-img-top position-relative" 
+                style="height: 320px; background: url('<?= htmlspecialchars($user_cover); ?>') center/cover no-repeat;"
+                aria-label="Ảnh bìa hồ sơ"
+            >
+                <div class="position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-25"></div>
+            </div>
+            
+            <div class="card-body position-relative pt-0 px-md-5 pb-5">
+                
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-end text-center text-md-start" style="margin-top: -80px; z-index: 2;">
+                    
+                    <div class="d-flex flex-column flex-md-row align-items-center align-items-md-end gap-4">
+                        
+                        <div class="position-relative">
+                            <img 
+                                src="<?= htmlspecialchars($user_avatar); ?>" 
+                                class="rounded-circle border border-5 border-white bg-white shadow-lg" 
+                                width="170" 
+                                height="170" 
+                                style="object-fit: cover;" 
+                                alt="Ảnh đại diện của <?= htmlspecialchars($user_name); ?>"
+                            >
+                            <span class="position-absolute bottom-0 end-0 p-2 mb-2 me-3 bg-success border border-3 border-white rounded-circle" aria-label="Đang trực tuyến"></span>
+                        </div>
+                        
+                        <div class="pb-3 mt-3 mt-md-0">
+                            <h1 class="fw-bold m-0 text-dark mb-1" style="font-size: 2rem;">
+                                <?= htmlspecialchars($user_name); ?>
+                                
+                                <?php if($is_verified): ?>
+                                    <i 
+                                        class="fa-solid fa-circle-check text-primary fs-4 ms-2 align-middle" 
+                                        data-bs-toggle="tooltip" 
+                                        data-bs-placement="top" 
+                                        title="Tài khoản hệ thống đã cung cấp đủ hồ sơ định danh hợp lệ"
+                                        aria-label="Tài khoản đã xác thực"
+                                    ></i>
+                                <?php endif; ?>
+                            </h1>
+                            
+                            <span class="badge bg-secondary mb-2 text-uppercase letter-spacing-1 px-3 py-2 rounded-pill shadow-sm">
+                                <?= htmlspecialchars($user_type ?: 'Thành viên tập sự'); ?>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 mt-md-0 pb-3">
+                        <button 
+                            type="button"
+                            class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editProfileModal"
+                            aria-label="Mở cửa sổ chỉnh sửa hồ sơ cá nhân"
+                        >
+                            <i class="fa-solid fa-pen-to-square"></i> Cập nhật hồ sơ
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-center justify-content-md-start gap-4 gap-md-5 mt-5 pt-4 border-top border-light">
+                    
+                    <div class="text-center text-md-start">
+                        <h3 class="fw-bold m-0 text-warning d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
+                            <i class="fa-solid fa-carrot fs-4"></i> <?= number_format($stats_xp); ?>
+                        </h3>
+                        <span class="text-muted small text-uppercase fw-bold letter-spacing-1 opacity-75">Điểm Cà Rốt</span>
+                    </div>
+                    
+                    <div class="text-center text-md-start border-start ps-4 ps-md-5">
+                        <h3 class="fw-bold m-0 text-dark d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
+                            <i class="fa-solid fa-users text-info fs-4"></i> <?= number_format($stats_buddies); ?>
+                        </h3>
+                        <span class="text-muted small text-uppercase fw-bold letter-spacing-1 opacity-75">Bạn cùng tiến</span>
+                    </div>
+                    
+                    <div class="text-center text-md-start border-start ps-4 ps-md-5">
+                        <h3 class="fw-bold m-0 text-dark d-flex align-items-center gap-2 justify-content-center justify-content-md-start">
+                            <i class="fa-solid fa-book-open text-danger fs-4"></i> <?= number_format($stats_docs); ?>
+                        </h3>
+                        <span class="text-muted small text-uppercase fw-bold letter-spacing-1 opacity-75">Tài liệu</span>
+                    </div>
+                    
+                </div>
+            </div>
+        </div> <ul class="nav nav-pills bg-white p-2 rounded-4 shadow-sm gap-2 border flex-nowrap overflow-auto" id="profileTabs" role="tablist">
+            
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link active fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2" 
+                    id="timeline-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#timeline" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="timeline" 
+                    aria-selected="true"
+                >
+                    <i class="fa-solid fa-house"></i> <span>Bảng tin</span>
+                </button>
+            </li>
+            
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2" 
+                    id="about-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#about" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="about" 
+                    aria-selected="false"
+                >
+                    <i class="fa-solid fa-user-graduate"></i> <span>Giới thiệu</span>
+                </button>
+            </li>
+            
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2" 
+                    id="library-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#library" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="library" 
+                    aria-selected="false"
+                >
+                    <i class="fa-solid fa-folder-open"></i> <span>Kho Tài liệu</span>
+                </button>
+            </li>
+            
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2" 
+                    id="events-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#events" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="events" 
+                    aria-selected="false"
+                >
+                    <i class="fa-solid fa-calendar-days"></i> <span>Sự kiện</span>
+                </button>
+            </li>
+            
+            <li class="nav-item" role="presentation">
+                <button 
+                    class="nav-link fw-bold px-4 py-2 rounded-pill d-flex align-items-center gap-2" 
+                    id="buddies-tab" 
+                    data-bs-toggle="tab" 
+                    data-bs-target="#buddies" 
+                    type="button" 
+                    role="tab" 
+                    aria-controls="buddies" 
+                    aria-selected="false"
+                >
+                    <i class="fa-solid fa-user-group"></i> <span>Bạn bè</span>
+                </button>
+            </li>
+            
+        </ul>
+
+        <div class="tab-content mt-4" id="profileTabsContent">
+            
+            <div 
+                class="tab-pane fade show active" 
+                id="timeline" 
+                role="tabpanel" 
+                aria-labelledby="timeline-tab" 
+                tabindex="0"
+            >
                 <div class="row g-4">
                     
-                    <div class="col-lg-5">
+                    <div class="col-12 col-lg-4">
                         
-                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.2s;">
-                            <h5 class="fw-bold mb-3">Giới thiệu</h5>
-                            <p class="text-center fst-italic mb-3 text-muted"><?= $about_quote; ?></p>
-                            
-                            <ul class="list-unstyled d-flex flex-column gap-3 mb-4 small">
-                                <li class="d-flex align-items-center gap-3">
-                                    <i class="fa-solid fa-graduation-cap text-muted fs-5 w-20px"></i>
-                                    <span><?= $about_edu; ?></span>
-                                </li>
-                                <li class="d-flex align-items-center gap-3">
-                                    <i class="fa-solid fa-briefcase text-muted fs-5 w-20px"></i>
-                                    <span><?= $about_job; ?></span>
-                                </li>
-                                <li class="d-flex align-items-center gap-3">
-                                    <i class="fa-solid fa-location-dot text-muted fs-5 w-20px"></i>
-                                    <span><?= $about_loc; ?></span>
-                                </li>
-                            </ul>
-                            
-                            <h6 class="fw-bold text-uppercase small text-muted mb-2">Từ khóa quan tâm</h6>
-                            <div class="d-flex flex-wrap gap-2">
-                                <span class="tag-badge">#VậtLý9</span>
-                                <span class="tag-badge">#Figma</span>
-                                <span class="tag-badge">#B2C_C2C</span>
+                        <div class="card shadow-sm border-0 rounded-4 bg-white sticky-top" style="top: 85px; z-index: 1;">
+                            <div class="card-body p-4">
+                                <h6 class="fw-bold mb-4 text-uppercase text-primary border-bottom pb-3"><i class="fa-solid fa-circle-info me-2"></i>Học vấn tóm tắt</h6>
+                                
+                                <ul class="list-unstyled d-flex flex-column gap-4 m-0 fs-6">
+                                    <li class="d-flex align-items-start gap-3">
+                                        <div class="bg-primary bg-opacity-10 p-2 rounded text-primary">
+                                            <i class="fa-solid fa-school fs-5 w-20px text-center"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block fw-medium mb-1">Trường THPT / Cấp 3</small>
+                                            <strong class="text-dark"><?= htmlspecialchars($truong_hoc ?: 'Chưa cung cấp dữ liệu'); ?></strong>
+                                        </div>
+                                    </li>
+                                    
+                                    <li class="d-flex align-items-start gap-3">
+                                        <div class="bg-success bg-opacity-10 p-2 rounded text-success">
+                                            <i class="fa-solid fa-building-columns fs-5 w-20px text-center"></i>
+                                        </div>
+                                        <div>
+                                            <small class="text-muted d-block fw-medium mb-1">Đại học / Cao đẳng</small>
+                                            <strong class="text-dark"><?= htmlspecialchars($truong_dai_hoc ?: 'Chưa cung cấp dữ liệu'); ?></strong>
+                                        </div>
+                                    </li>
+                                </ul>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0">Nhật ký học tập</h5>
-                                <span class="badge bg-light text-dark border">30 ngày qua</span>
-                            </div>
-                            <div class="heatmap-wrapper">
-                                <div class="heatmap-container" id="heatmap-grid">
-                                    </div>
-                            </div>
-                            <div class="d-flex justify-content-end align-items-center gap-2 mt-3 small text-muted px-2">
-                                <span>Ít</span>
-                                <div class="heat-cell h-auto w-20px"></div>
-                                <div class="heat-cell heat-lvl-1 h-auto w-20px"></div>
-                                <div class="heat-cell heat-lvl-2 h-auto w-20px"></div>
-                                <div class="heat-cell heat-lvl-3 h-auto w-20px"></div>
-                                <span>Nhiều</span>
-                            </div>
-                        </div>
-
-                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.4s;">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="fw-bold m-0">Sự kiện sắp tới</h5>
-                                <a href="#" class="text-primary text-decoration-none small fw-bold" onclick="document.querySelector('[data-bs-target=\'#events\']').click(); return false;">Xem tất cả</a>
-                            </div>
-                            
-                            <div class="d-flex flex-column gap-3">
-                                <div class="event-mini">
-                                    <div class="event-date-box">
-                                        <span class="fs-7 fw-bold text-uppercase">Th4</span>
-                                        <span class="fs-4 fw-bold lh-1">15</span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1 text-truncate">Họp vận hành Babe Nobuli</h6>
-                                        <p class="text-muted small m-0"><i class="fa-regular fa-clock me-1"></i> 20:00 - Google Meet</p>
+                    <div class="col-12 col-lg-8">
+                        
+                        <div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
+                            <div class="card-body p-4">
+                                
+                                <form method="POST" action="">
+                                    
+                                    <input type="hidden" name="action" value="add_post">
+                                    
+                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                                    
+                                    <div class="d-flex gap-3">
+                                        <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border border-2 border-light shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Bạn">
+                                        
+                                        <textarea 
+                                            class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6" 
+                                            name="noidung_post" 
+                                            rows="3" 
+                                            placeholder="Bạn muốn chia sẻ kiến thức, bài tập khó hay một câu chuyện học thuật hôm nay?..." 
+                                            required 
+                                            style="resize: none;"
+                                        ></textarea>
                                     </div>
                                     
-                                </div>
-                                <div class="event-mini">
-                                    <div class="event-date-box" style="background: #FFFBEB; color: #D97706;">
-                                        <span class="fs-7 fw-bold text-uppercase">Th4</span>
-                                        <span class="fs-4 fw-bold lh-1">18</span>
+                                    <hr class="text-muted border-dashed my-4 opacity-25">
+                                    
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tính năng upload tệp đang bảo trì">
+                                                <i class="fa-solid fa-file-pdf me-1"></i> File PDF
+                                            </button>
+                                            <button type="button" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tính năng upload ảnh đang bảo trì">
+                                                <i class="fa-solid fa-image me-1"></i> Hình ảnh
+                                            </button>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
+                                            <i class="fa-solid fa-paper-plane me-2"></i> Xuất bản bài viết
+                                        </button>
                                     </div>
-                                    <div class="flex-grow-1">
-                                        <h6 class="fw-bold mb-1 text-truncate">Thi thử Vật Lý 9 HK2</h6>
-                                        <p class="text-muted small m-0"><i class="fa-solid fa-location-dot me-1"></i> Phòng Thi Ảo 01</p>
-                                    </div>
-                                </div>
+                                </form>
                             </div>
-                        </div>
-
-                    </div>
-
-                    <div class="col-lg-7">
+                        </div> <?php if (count($posts_data) > 0): ?>
+                            
+                            <?php foreach ($posts_data as $post): ?>
+                            
+                            <article class="card shadow-sm border-0 mb-4 rounded-4 bg-white overflow-hidden">
+                                <div class="card-body p-4">
+                                    
+                                    <header class="d-flex align-items-center justify-content-between mb-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            
+                                            <img src="assets/images/default-avatar.png" class="rounded-circle border shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Tác giả">
+                                            
+                                            <div>
+                                                <h6 class="m-0 fw-bold text-dark fs-5 d-flex align-items-center gap-2">
+                                                    <?= htmlspecialchars($post['username']); ?>
+                                                    
+                                                    <?php if(!empty($post['giay_to_chung_minh'])): ?>
+                                                        <i class="fa-solid fa-circle-check text-primary fs-6" title="Xác minh học sinh thực"></i>
+                                                    <?php endif; ?>
+                                                </h6>
+                                                
+                                                <small class="text-muted fw-medium d-flex align-items-center gap-1">
+                                                    <i class="fa-regular fa-clock"></i> 
+                                                    <?= time_elapsed_string($post['created_at']); ?> 
+                                                    <span class="mx-1">•</span> 
+                                                    <i class="fa-solid fa-earth-americas" title="Công khai"></i>
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <button class="btn btn-light rounded-circle text-muted shadow-sm" style="width:40px; height:40px;" aria-label="Tùy chọn bài viết">
+                                            <i class="fa-solid fa-ellipsis"></i>
+                                        </button>
+                                    </header>
+                                    
+                                    <div class="post-content mt-3">
+                                        <p class="m-0 fs-5 text-dark" style="line-height: 1.8; white-space: pre-line;">
+                                            <?= htmlspecialchars($post['noi_dung']); ?>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <footer class="card-footer bg-light border-top border-light py-2 px-4">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        
+                                        <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
+                                            <i class="fa-regular fa-thumbs-up fs-5 me-2"></i> Thích
+                                        </button>
+                                        
+                                        <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
+                                            <i class="fa-regular fa-comment fs-5 me-2"></i> Bình luận
+                                        </button>
+                                        
+                                        <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
+                                            <i class="fa-solid fa-share fs-5 me-2"></i> Chia sẻ
+                                        </button>
+                                        
+                                    </div>
+                                </footer>
+                            </article>
+                            
+                            <?php endforeach; ?>
+                            
+                        <?php else: ?>
+                            <div class="text-center py-5 bg-white shadow-sm rounded-4 border border-light">
+                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
+                                    <i class="fa-regular fa-pen-to-square fs-1 text-primary opacity-75"></i>
+                                </div>
+                                <h4 class="text-dark fw-bold">Chưa có dấu ấn học thuật</h4>
+                                <p class="text-muted fs-6 m-0 px-4">Khu vực này dùng để lưu trữ và chia sẻ những bài đăng, câu hỏi và tiến độ học tập của bạn trên The Bunny.</p>
+                            </div>
+                        <?php endif; ?>
                         
-                        <div class="challenge-banner mb-4 animate-slide-up" style="animation-delay: 0.2s;">
-                            <i class="fa-solid fa-bolt challenge-icon"></i>
-                            <div class="d-flex justify-content-between align-items-center position-relative z-1">
-                                <div>
-                                    <span class="badge bg-warning text-dark mb-2"><i class="fa-solid fa-circle-dot text-danger fa-fade me-1"></i> Đang trực tiếp</span>
-                                    <h5 class="fw-bold m-0 text-dark">Trận chiến: 50 Câu trắc nghiệm Vật Lý</h5>
-                                    <p class="small text-dark m-0 mt-1 d-flex justify-content-center justify-content-md-start align-items-center gap-2">Đối thủ: <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="20"> <b>Lê Minh Tuấn</b></p>
-                                </div>
-                                <div class="text-end">
-                                    <h3 class="fw-bold text-danger m-0 mb-1">38 - 42</h3>
-                                    <button class="btn btn-dark btn-sm rounded-pill px-3 fw-bold">Vào xem <i class="fa-solid fa-arrow-right ms-1"></i></button>
+                    </div>
+                </div>
+            </div> <div 
+                class="tab-pane fade" 
+                id="about" 
+                role="tabpanel" 
+                aria-labelledby="about-tab" 
+                tabindex="0"
+            >
+                <div class="card shadow-sm border-0 p-md-5 rounded-4 bg-white">
+                    <div class="card-body">
+                        
+                        <h3 class="fw-bold mb-4 border-bottom pb-4 text-primary"><i class="fa-solid fa-address-card me-3"></i>Hồ sơ Định danh Toàn diện</h3>
+                        
+                        <div class="row g-5">
+                            
+                            <div class="col-md-6">
+                                <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-server text-secondary me-2"></i> Dữ liệu Hệ thống</h5>
+                                
+                                <dl class="row mb-0 fs-5">
+                                    <dt class="col-sm-4 text-muted fw-normal mb-3">Tên tài khoản</dt>
+                                    <dd class="col-sm-8 text-dark fw-bold mb-3"><?= htmlspecialchars($user_name); ?></dd>
+                                    
+                                    <dt class="col-sm-4 text-muted fw-normal mb-3">Nhóm quyền hạn</dt>
+                                    <dd class="col-sm-8 mb-3"><span class="badge bg-primary fs-6 px-3 py-2"><?= htmlspecialchars($user_type ?: 'Chưa phân cấp'); ?></span></dd>
+                                    
+                                    <dt class="col-sm-4 text-muted fw-normal mb-3">Trạng thái Căn cước</dt>
+                                    <dd class="col-sm-8 mb-3">
+                                        <?php if($is_verified): ?>
+                                            <span class="text-success fw-bold"><i class="fa-solid fa-shield-check"></i> Đã nộp Giấy tờ</span>
+                                        <?php else: ?>
+                                            <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Chưa xác minh</span>
+                                        <?php endif; ?>
+                                    </dd>
+                                </dl>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-book-open-reader text-secondary me-2"></i> Thông tin Tự giới thiệu</h5>
+                                
+                                <div class="bg-light p-4 rounded-4 border border-secondary-subtle h-100">
+                                    <p class="m-0 fs-5 text-dark fw-medium" style="line-height: 1.8;">
+                                        <?= nl2br(htmlspecialchars($thong_tin_dinh_danh ?: 'Học sinh này chưa cập nhật thông tin mô tả chi tiết năng lực học thuật.')); ?>
+                                    </p>
                                 </div>
                             </div>
+                            
+                        </div> </div>
+                </div>
+            </div> <div 
+                class="tab-pane fade" 
+                id="library" 
+                role="tabpanel" 
+                aria-labelledby="library-tab" 
+                tabindex="0"
+            >
+                <div class="card shadow-sm border-0 p-md-5 rounded-4 bg-white">
+                    <div class="card-body">
+                        
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
+                            <h3 class="fw-bold m-0 text-dark"><i class="fa-solid fa-box-archive text-warning me-3"></i>Thư viện Học liệu số</h3>
+                            
+                            <button 
+                                class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#addDocModal"
+                            >
+                                <i class="fa-solid fa-cloud-arrow-up fs-5"></i> Cống hiến tài liệu
+                            </button>
                         </div>
-
-                        <div class="card-bunny animate-slide-up" style="animation-delay: 0.3s;">
-                            <?php if($message_notify != ""): ?>
-                                <div class="alert alert-success py-2 mx-3 mt-3 small fw-bold"><i class="fa-solid fa-check-circle me-1"></i> <?= $message_notify ?></div>
+                        
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            
+                            <?php if (count($docs_data) > 0): ?>
+                                <?php foreach ($docs_data as $doc): ?>
+                                <div class="col">
+                                    
+                                    <div class="border rounded-4 p-4 d-flex align-items-center justify-content-between bg-white shadow-sm h-100 border-start border-4 border-danger hover-transform transition">
+                                        
+                                        <div class="d-flex align-items-center gap-4 overflow-hidden">
+                                            <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+                                                <i class="fa-solid fa-file-pdf fs-3"></i>
+                                            </div>
+                                            
+                                            <div class="overflow-hidden">
+                                                <h5 class="m-0 fw-bold text-dark text-truncate mb-2" style="max-width: 250px;" title="<?= htmlspecialchars($doc['ten_tai_lieu']); ?>">
+                                                    <?= htmlspecialchars($doc['ten_tai_lieu']); ?>
+                                                </h5>
+                                                <small class="text-muted fw-bold fs-6">
+                                                    <?= htmlspecialchars($doc['kich_thuoc']); ?> KB 
+                                                    <span class="mx-2 text-light-gray">•</span> 
+                                                    <i class="fa-solid fa-cloud-arrow-down text-primary"></i> <?= (int)$doc['luot_tai']; ?> Lượt lưu
+                                                </small>
+                                            </div>
+                                        </div>
+                                        
+                                        <a href="#" class="btn btn-outline-primary rounded-circle shadow-sm ms-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;" aria-label="Tải file này">
+                                            <i class="fa-solid fa-download fs-5"></i>
+                                        </a>
+                                        
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                                
+                            <?php else: ?>
+                                <div class="col-12 text-center py-5">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="Empty" width="120" class="opacity-50 mb-4">
+                                    <h4 class="text-dark fw-bold">Không gian tài liệu đang trống</h4>
+                                    <p class="text-muted fs-5">Bấm nút "Cống hiến tài liệu" phía trên để lưu trữ đề cương và bài giảng của bạn trên The Bunny.</p>
+                                </div>
                             <?php endif; ?>
                             
-                            <form method="POST" action="">
-                                <div class="post-composer mb-3 px-3 pt-3">
-                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="44" height="44">
-                                    <input type="text" name="noidung_post" class="composer-input" placeholder="Chia sẻ tiến độ hoặc tài liệu...">
-                                    <button type="submit" style="display:none;"></button>
-                                </div>
-                            </form>
-                            
-                            <div class="d-flex justify-content-between border-top pt-3">
-                                <button class="btn-action flex-fill"><i class="fa-solid fa-file-pdf text-danger"></i> <span>Đính Note</span></button>
-                                <button class="btn-action flex-fill"><i class="fa-solid fa-pen-ruler text-success"></i> <span>Code/Thiết kế</span></button>
-                                <button class="btn-action flex-fill"><i class="fa-solid fa-flag text-warning"></i> <span>Mục tiêu</span></button>
-                            </div>
-                        </div>
-
-                        <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.4s;">
-                            <div class="post-header">
-                                <div class="d-flex gap-3 align-items-center">
-                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="48" height="48">
-                                    <div>
-                                        <h6 class="fw-bold m-0 d-flex align-items-center gap-1"><?= $user_name; ?> <?php if($is_verified): ?><i class="fa-solid fa-circle-check text-primary fs-6"></i><?php endif; ?></h6>
-                                        <span class="text-muted small">2 giờ trước · <i class="fa-solid fa-earth-americas"></i></span>
-                                    </div>
-                                </div>
-                                <button class="btn btn-light rounded-circle p-2"><i class="fa-solid fa-ellipsis"></i></button>
-                            </div>
-                            
-                            <div class="post-body">
-                                <p>Hoàn tất mô hình tài chính và luồng vận hành cho nền tảng <b>Babe Nobuli</b>. 🚀</p>
-                                <p>Quyết định tập trung hoàn toàn vào cấu trúc <b>Hybrid B2C và C2C</b>. Ở pha này, nhóm 3 tụi mình lược bỏ bớt các mô tả công nghệ rườm rà để tập trung giải quyết bài toán: Dòng chảy hàng hóa (Operational flow) và Tối ưu giá trị vòng đời khách hàng (CLV). <br><br>Mọi người vào file Figma check lại luồng mua hàng và kiểm kho giúp mình nhé!</p>
-                            </div>
-                            
-                            <div class="post-attachment">
-                                <div class="bg-white p-3 rounded-circle shadow-sm">
-                                    <i class="fa-brands fa-figma text-purple" style="font-size: 32px;"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h6 class="fw-bold mb-1">BabeNobuli_Flow_Final.fig</h6>
-                                    <p class="text-muted small m-0">Figma Prototype · Cập nhật 2 giờ trước</p>
-                                </div>
-                                <button class="btn btn-outline-primary fw-bold rounded-pill">Xem thiết kế</button>
-                            </div>
-
-                            <div class="post-footer">
-                                <div class="d-flex justify-content-between text-muted small mb-2 px-1">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-carrot text-warning bg-light p-1 rounded-circle"></i>
-                                        <i class="fa-solid fa-thumbs-up text-primary bg-light p-1 rounded-circle"></i>
-                                        <span class="ms-1 fw-bold">124</span>
-                                    </div>
-                                    <div>18 Bình luận</div>
-                                </div>
-                                <div class="reaction-bar">
-                                    <button class="btn-action flex-fill"><i class="fa-regular fa-thumbs-up"></i> <span>Hữu ích</span></button>
-                                    <button class="btn-action flex-fill"><i class="fa-regular fa-comment"></i> <span>Bình luận</span></button>
-                                    <button class="btn-action flex-fill"><i class="fa-solid fa-share"></i> <span>Chia sẻ</span></button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-bunny post-card animate-slide-up" style="animation-delay: 0.5s;">
-                            <div class="post-header">
-                                <div class="d-flex gap-3 align-items-center">
-                                    <img src="<?= $user_avatar; ?>" class="rounded-circle" width="48" height="48">
-                                    <div>
-                                        <h6 class="fw-bold m-0"><?= $user_name; ?></h6>
-                                        <span class="text-muted small">Hôm qua lúc 20:30 · <i class="fa-solid fa-user-group"></i> Nhóm Yêu Văn Học</span>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="post-body">
-                                <p><b>Góc đính chính Văn học:</b> 📖</p>
-                                <p>Dạo quanh diễn đàn thấy nhiều bạn làm bài phân tích tác phẩm "Những người khốn khổ" (Les Misérables) hay bị nhầm lẫn một chi tiết rất quan trọng. Mọi người hay viết là người mẹ nghèo Fantine phải trải qua kiếp tù đày. Thực ra không phải nhé!</p>
-                                <p>Người mẹ nghèo Fantine không có liên quan gì đến việc đi tù cả. Nhân vật thụ án tù khổ sai chính là <b>Jean Valjean</b> (vì ăn cắp một chiếc bánh mì cho cháu). Chúc các bạn viết bài luận không bị trừ điểm oan chỗ này nha! 😉</p>
-                                <div class="d-flex gap-2 mt-3 flex-wrap">
-                                    <span class="tag-badge text-primary bg-primary bg-opacity-10">#VanHocNuocNgoai</span>
-                                    <span class="tag-badge text-primary bg-primary bg-opacity-10">#LesMiserables</span>
-                                </div>
-                            </div>
-
-                            <div class="post-footer">
-                                <div class="d-flex justify-content-between text-muted small mb-2 px-1">
-                                    <div class="d-flex align-items-center gap-1">
-                                        <i class="fa-solid fa-lightbulb text-warning bg-light p-1 rounded-circle"></i>
-                                        <span class="ms-1 fw-bold">256</span>
-                                    </div>
-                                    <div>42 Thảo luận</div>
-                                </div>
-                                <div class="reaction-bar">
-                                    <button class="btn-action flex-fill text-warning bg-warning bg-opacity-10"><i class="fa-solid fa-lightbulb"></i> <span>Sáng kiến</span></button>
-                                    <button class="btn-action flex-fill"><i class="fa-regular fa-comment"></i> <span>Thảo luận</span></button>
-                                    <button class="btn-action flex-fill"><i class="fa-regular fa-bookmark"></i> <span>Lưu tip</span></button>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="about">
-                <div class="card-bunny">
-                    <h4 class="fw-bold mb-4">Hồ sơ Năng lực (Academic Portfolio)</h4>
-                    <div class="row g-5">
-                        <div class="col-md-6">
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-book text-primary me-2"></i> Trình độ Học vấn</h6>
-                            <div class="border-start border-2 border-primary ps-3 py-1 mb-4">
-                                <h6 class="fw-bold mb-1">Học sinh Lớp 9</h6>
-                                <p class="text-muted small m-0">Trường THCS The Bunny (2022 - Hiện tại)</p>
-                                <ul class="small mt-2 text-muted">
-                                    <li>Định hướng: Chuyên Vật Lý</li>
-                                    <li>Môn học thế mạnh: Vật Lý, Lịch Sử, Địa Lý</li>
-                                </ul>
-                            </div>
-
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-briefcase text-success me-2"></i> Kinh nghiệm Dự án</h6>
-                            <div class="border-start border-2 border-success ps-3 py-1">
-                                <h6 class="fw-bold mb-1">Founder / Product Designer - Babe Nobuli</h6>
-                                <p class="text-muted small m-0">Tháng 3/2026 - Hiện tại</p>
-                                <ul class="small mt-2 text-muted">
-                                    <li>Xây dựng mô hình TMĐT kết hợp B2C và C2C.</li>
-                                    <li>Lập báo cáo tài chính (Tính NPV, Điểm hòa vốn BEP).</li>
-                                    <li>Thiết kế toàn bộ UI/UX luồng người dùng trên Figma.</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-code text-warning me-2"></i> Kỹ năng chuyên môn</h6>
-                            
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>UI/UX Design (Figma)</span><span>85%</span></div>
-                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-purple" style="width: 85%; background: var(--bunny-primary);"></div></div>
-                            </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>Phân tích tài chính (Excel)</span><span>70%</span></div>
-                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-success" style="width: 70%;"></div></div>
-                            </div>
-                            <div class="mb-4">
-                                <div class="d-flex justify-content-between small fw-bold mb-1"><span>Giải Toán/Lý cấp tốc</span><span>90%</span></div>
-                                <div class="progress" style="height: 8px;"><div class="progress-bar bg-warning" style="width: 90%;"></div></div>
-                            </div>
-
-                            <h6 class="text-uppercase text-muted fw-bold mb-3 small"><i class="fa-solid fa-award text-danger me-2"></i> Huy hiệu The Bunny</h6>
-                            <div class="d-flex gap-3">
-                                <div class="text-center" title="Chia sẻ > 30 tài liệu">
-                                    <div class="bg-light rounded-circle p-3 mb-2 border border-2 border-warning"><i class="fa-solid fa-file-export fs-3 text-warning"></i></div>
-                                    <small class="fw-bold">Thợ chia sẻ</small>
-                                </div>
-                                <div class="text-center" title="Giải đáp > 100 câu hỏi">
-                                    <div class="bg-light rounded-circle p-3 mb-2 border border-2 border-info"><i class="fa-solid fa-user-graduate fs-3 text-info"></i></div>
-                                    <small class="fw-bold">Học giả</small>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="tab-pane fade" id="buddies">
-                <div class="card-bunny">
-                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-4 gap-3">
-                        <h4 class="fw-bold m-0">Mạng lưới học tập <span class="text-muted fs-5 fw-normal">(<?= $stats_buddies; ?> người)</span></h4>
-                        <input type="text" class="form-control w-100 w-sm-25 rounded-pill bg-light border-0" placeholder="Tìm bạn học..." style="max-width: 300px;">
-                    </div>
-                    
-                    <div class="row g-3">
-                        <div class="col-md-6 col-lg-4">
-                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition" style="background: #FAFAFA;">
-                                <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle" width="60" height="60">
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <h6 class="fw-bold mb-0">Lê Minh Tuấn</h6>
-                                    <small class="text-muted d-block text-truncate">Cùng tham gia: Nhóm 3 - Babe Nobuli</small>
-                                </div>
-                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
-                            </div>
+            </div> <div 
+                class="tab-pane fade" 
+                id="events" 
+                role="tabpanel" 
+                aria-labelledby="events-tab" 
+                tabindex="0"
+            >
+                <div class="card shadow-sm border-0 p-md-5 rounded-4 bg-white">
+                    <div class="card-body">
+                        
+                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
+                            <h3 class="fw-bold m-0 text-dark"><i class="fa-regular fa-calendar-check text-primary me-3"></i>Lịch trình Tổ chức Sự kiện</h3>
+                            <button 
+                                class="btn btn-warning fw-bold text-dark px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#addEventModal"
+                            >
+                                <i class="fa-solid fa-calendar-plus fs-5"></i> Phát hành Lịch trình
+                            </button>
                         </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition">
-                                <img src="https://i.pravatar.cc/150?img=9" class="rounded-circle" width="60" height="60">
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <h6 class="fw-bold mb-0">Hoàng Oanh</h6>
-                                    <small class="text-muted d-block text-truncate">Học chung: Ngữ Văn Khối 9</small>
-                                </div>
-                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
-                            </div>
-                        </div>
-                        <div class="col-md-6 col-lg-4">
-                            <div class="border rounded-3 p-3 d-flex align-items-center gap-3 transition">
-                                <img src="https://i.pravatar.cc/150?img=11" class="rounded-circle" width="60" height="60">
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <h6 class="fw-bold mb-0">Trần Phong</h6>
-                                    <small class="text-muted d-block text-truncate">Đối thủ Thách đấu (Tỉ số: 5-3)</small>
-                                </div>
-                                <button class="btn btn-light rounded-circle border"><i class="fa-solid fa-message text-primary"></i></button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="library">
-                <div class="card-bunny">
-                    <h4 class="fw-bold mb-4">Kho tài liệu đã chia sẻ</h4>
-                    <div class="table-responsive">
-                        <table class="table table-borderless align-middle" style="min-width: 600px;">
-                            <thead class="border-bottom">
-                                <tr class="text-muted small text-uppercase">
-                                    <th>Tên File</th>
-                                    <th>Môn học</th>
-                                    <th>Kích thước</th>
-                                    <th>Lượt lưu</th>
-                                    <th class="text-end">Hành động</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-bottom">
-                                    <td class="py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="bg-danger bg-opacity-10 text-danger p-2 rounded"><i class="fa-solid fa-file-pdf fs-4"></i></div>
-                                            <span class="fw-bold">DeCuong_VatLy9_Full.pdf</span>
+                        
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                            
+                            <?php if (count($events_data) > 0): ?>
+                                <?php foreach ($events_data as $event): ?>
+                                <div class="col">
+                                    <div class="card h-100 border-0 shadow-sm bg-primary bg-opacity-10 rounded-4 overflow-hidden position-relative hover-lift transition">
+                                        
+                                        <div class="bg-primary w-100" style="height: 6px;"></div>
+                                        
+                                        <div class="card-body p-4">
+                                            <div class="d-flex align-items-center gap-3 mb-4">
+                                                
+                                                <div class="bg-primary text-white text-center rounded-3 p-3 shadow-sm" style="min-width: 75px;">
+                                                    <span class="d-block fw-bold fs-2 lh-1"><?= date('d', strtotime($event['thoi_gian_bat_dau'])); ?></span>
+                                                    <span class="d-block small text-uppercase fw-bold opacity-75 mt-1">Tháng <?= date('m', strtotime($event['thoi_gian_bat_dau'])); ?></span>
+                                                </div>
+                                                
+                                                <h5 class="fw-bold text-dark m-0 lh-base"><?= htmlspecialchars($event['ten_su_kien']); ?></h5>
+                                                
+                                            </div>
+                                            
+                                            <div class="bg-white bg-opacity-50 p-3 rounded-3 mb-3">
+                                                <p class="text-dark fw-bold mb-2 fs-6">
+                                                    <i class="fa-regular fa-clock w-20px text-primary text-center me-2"></i> 
+                                                    <?= date('H:i A', strtotime($event['thoi_gian_bat_dau'])); ?>
+                                                </p>
+                                                <p class="text-dark fw-bold m-0 fs-6">
+                                                    <i class="fa-solid fa-location-dot w-20px text-danger text-center me-2"></i> 
+                                                    <?= htmlspecialchars($event['dia_diem']); ?>
+                                                </p>
+                                            </div>
+                                            
+                                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill">Đăng ký tham gia</button>
                                         </div>
-                                    </td>
-                                    <td><span class="badge bg-light text-dark border">Vật Lý 9</span></td>
-                                    <td class="text-muted small">2.4 MB</td>
-                                    <td><i class="fa-solid fa-bookmark text-warning me-1"></i> 342</td>
-                                    <td class="text-end"><button class="btn btn-light border btn-sm fw-bold">Tải xuống</button></td>
-                                </tr>
-                                <tr class="border-bottom">
-                                    <td class="py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="bg-success bg-opacity-10 text-success p-2 rounded"><i class="fa-solid fa-file-excel fs-4"></i></div>
-                                            <span class="fw-bold">NPV_BEP_Calculator_Nobuli.xlsx</span>
-                                        </div>
-                                    </td>
-                                    <td><span class="badge bg-light text-dark border">Kinh doanh</span></td>
-                                    <td class="text-muted small">1.1 MB</td>
-                                    <td><i class="fa-solid fa-bookmark text-warning me-1"></i> 128</td>
-                                    <td class="text-end"><button class="btn btn-light border btn-sm fw-bold">Tải xuống</button></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-pane fade" id="events">
-                <div class="card-bunny">
-                    <h4 class="fw-bold mb-4">Lịch trình & Hội thảo học thuật</h4>
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="card border border-light shadow-sm h-100">
-                                <div class="card-body">
-                                    <div class="d-flex justify-content-between mb-3">
-                                        <div class="event-date-box" style="background: rgba(139, 92, 246, 0.1); color: var(--bunny-primary);">
-                                            <span class="fs-7 fw-bold text-uppercase">Th4</span><span class="fs-4 fw-bold lh-1">15</span>
-                                        </div>
-                                        <span class="badge bg-success text-white h-auto py-2 px-3 align-self-start">Tham gia</span>
-                                    </div>
-                                    <h5 class="fw-bold">Họp vận hành Babe Nobuli</h5>
-                                    <p class="text-muted small mb-3">Bàn về luồng Logistics và quản trị dòng tiền C2C.</p>
-                                    <hr>
-                                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
-                                        <div class="avatar-group d-flex">
-                                            <img src="https://i.pravatar.cc/150?img=1" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
-                                            <img src="https://i.pravatar.cc/150?img=2" class="rounded-circle border border-white" width="30" style="margin-right:-10px;">
-                                            <div class="rounded-circle bg-light border border-white d-flex justify-content-center align-items-center" style="width:30px; height:30px; z-index:1;"><small>+3</small></div>
-                                        </div>
-                                        <button class="btn btn-outline-primary btn-sm rounded-pill fw-bold">Vào phòng họp Meet</button>
                                     </div>
                                 </div>
-                            </div>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <div class="col-12 text-center py-5">
+                                    <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
+                                        <i class="fa-regular fa-calendar-xmark fs-1 text-warning opacity-75"></i>
+                                    </div>
+                                    <h4 class="text-dark fw-bold">Không có lịch trình sắp tới</h4>
+                                    <p class="text-muted fs-5 m-0 px-4">Hãy đóng vai trò là một diễn giả hoặc tổ chức một nhóm học tập trực tuyến mới ngay bây giờ.</p>
+                                </div>
+                            <?php endif; ?>
+                            
                         </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="tab-pane fade" id="battles">
-                <div class="card-bunny bg-dark text-white position-relative overflow-hidden border-0">
-                    <div class="position-absolute" style="top: -50px; right: -50px; width: 200px; height: 200px; background: rgba(255, 255, 255, 0.1); border-radius: 50%; filter: blur(30px);"></div>
-                    <div class="position-absolute" style="bottom: -50px; left: -50px; width: 200px; height: 200px; background: rgba(139, 92, 246, 0.3); border-radius: 50%; filter: blur(30px);"></div>
-                    
-                    <div class="position-relative z-1 d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-                        <div>
-                            <h3 class="fw-bold mb-1 text-warning"><i class="fa-solid fa-trophy me-2"></i>Sàn đấu The Bunny</h3>
-                            <p class="m-0 text-light opacity-75">Thách thức giới hạn kiến thức - Giành lấy vinh quang (và Cà rốt!)</p>
-                        </div>
-                        <button class="btn btn-warning fw-bold text-dark px-4 py-2" onclick="triggerChallenge()">+ Tạo lời thách đấu mới</button>
-                    </div>
-
-                    <div class="row g-4 position-relative z-1">
-                        <div class="col-md-6">
-                            <div class="bg-white bg-opacity-10 p-4 rounded-4 border border-white border-opacity-25 h-100">
-                                <span class="badge bg-danger mb-3 pulse-anim"><i class="fa-solid fa-circle-dot me-1"></i> Đang diễn ra</span>
-                                <h5 class="fw-bold text-white">50 Câu trắc nghiệm Vật Lý (Quang học)</h5>
+            </div> <div 
+                class="tab-pane fade" 
+                id="buddies" 
+                role="tabpanel" 
+                aria-labelledby="buddies-tab" 
+                tabindex="0"
+            >
+                <div class="card shadow-sm border-0 p-md-5 rounded-4 bg-white">
+                    <div class="card-body">
+                        
+                        <h3 class="fw-bold mb-5 border-bottom pb-4 text-dark d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-users-rays text-success fs-2"></i>
+                            Mạng lưới Bạn cùng tiến 
+                            <span class="badge bg-light text-dark border fs-5 rounded-pill px-3"><?= number_format($stats_buddies); ?></span>
+                        </h3>
+                        
+                        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                            
+                            <?php if (count($buddies_data) > 0): ?>
+                                <?php foreach ($buddies_data as $buddy): ?>
+                                <div class="col">
+                                    <div class="border border-light rounded-4 p-4 d-flex flex-column align-items-center text-center bg-white shadow-sm h-100 hover-border-primary transition">
+                                        
+                                        <img src="assets/images/default-avatar.png" class="rounded-circle border border-3 border-light shadow-sm mb-3" width="90" height="90" style="object-fit: cover;" alt="Bạn bè">
+                                        
+                                        <div class="flex-grow-1 w-100 mb-3">
+                                            <h5 class="fw-bold m-0 text-dark text-truncate px-2 mb-2" title="<?= htmlspecialchars($buddy['username']); ?>">
+                                                <?= htmlspecialchars($buddy['username']); ?>
+                                            </h5>
+                                            <span class="badge bg-light text-secondary fw-bold text-wrap px-3 py-2 lh-base w-100">
+                                                <i class="fa-solid fa-school me-1"></i> <?= htmlspecialchars($buddy['truong_hoc'] ?: 'Tự học tại The Bunny'); ?>
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="d-flex gap-2 w-100">
+                                            <button class="btn btn-primary flex-fill fw-bold rounded-pill shadow-sm" aria-label="Gửi tin nhắn">
+                                                <i class="fa-solid fa-comment-dots"></i> Nhắn tin
+                                            </button>
+                                            <button class="btn btn-light rounded-pill border shadow-sm px-3" aria-label="Xóa bạn bè">
+                                                <i class="fa-solid fa-user-xmark text-danger"></i>
+                                            </button>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
                                 
-                                <div class="d-flex justify-content-between align-items-center mt-4">
-                                    <div class="text-center">
-                                        <img src="<?= $user_avatar; ?>" class="rounded-circle border border-2 border-warning mb-2" width="60">
-                                        <h6 class="m-0 fw-bold">Alex (Bạn)</h6>
-                                        <h3 class="text-warning m-0">38 Điểm</h3>
-                                    </div>
-                                    <h1 class="text-white opacity-50 m-0 fst-italic">VS</h1>
-                                    <div class="text-center">
-                                        <img src="https://i.pravatar.cc/150?img=5" class="rounded-circle border border-2 border-secondary mb-2" width="60">
-                                        <h6 class="m-0 fw-bold">Minh Tuấn</h6>
-                                        <h3 class="text-light m-0">42 Điểm</h3>
-                                    </div>
+                            <?php else: ?>
+                                <div class="col-12 text-center py-5">
+                                    <img src="https://cdn-icons-png.flaticon.com/512/3394/3394785.png" alt="No Friends" width="120" class="opacity-50 mb-4">
+                                    <h4 class="text-dark fw-bold">Chưa kết nối học tập</h4>
+                                    <p class="text-muted fs-5 m-0 px-4">Hãy khám phá Hang thỏ hoặc Bảng xếp hạng Thách đấu để tìm kiếm những người bạn cùng chung chí hướng.</p>
+                                    <button class="btn btn-primary fw-bold px-5 py-2 rounded-pill mt-4">Tìm bạn học ngay</button>
                                 </div>
-                                <div class="mt-4 text-center">
-                                    <button class="btn btn-light text-dark fw-bold w-100 rounded-pill">Tiếp tục thi đấu</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="bg-white p-4 rounded-4 text-dark h-100 shadow">
-                                <h5 class="fw-bold mb-3">Lịch sử giao tranh</h5>
-                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fa-solid fa-crown text-warning fs-5"></i>
-                                        <div>
-                                            <h6 class="m-0 fw-bold small">Giải đề Lịch Sử Khối 9</h6>
-                                            <span class="text-muted" style="font-size: 11px;">Thắng Hoàng Oanh (9.5 - 8.0)</span>
-                                        </div>
-                                    </div>
-                                    <span class="badge bg-success-subtle text-success">+50 XP</span>
-                                </div>
-                                <div class="d-flex align-items-center justify-content-between border-bottom pb-2 mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="fa-solid fa-skull-crossbones text-danger fs-5"></i>
-                                        <div>
-                                            <h6 class="m-0 fw-bold small">Pomodoro 4h Code Figma</h6>
-                                            <span class="text-muted" style="font-size: 11px;">Thua Trần Phong (Bỏ cuộc giữa chừng)</span>
-                                        </div>
-                                    </div>
-                                    <span class="badge bg-danger-subtle text-danger">-20 XP</span>
-                                </div>
-                            </div>
+                            <?php endif; ?>
+                            
                         </div>
                     </div>
                 </div>
-            </div>
+            </div> </div> </div> <div 
+        class="modal fade" 
+        id="editProfileModal" 
+        tabindex="-1" 
+        aria-labelledby="editProfileModalLabel" 
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            
+            <form method="POST" action="">
+                
+                <input type="hidden" name="action" value="edit_profile">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    
+                    <div class="modal-header bg-primary bg-opacity-10 border-bottom-0 py-4 px-5">
+                        <h4 class="modal-title fw-bold text-primary" id="editProfileModalLabel">
+                            <i class="fa-solid fa-user-pen me-2"></i> Thiết lập Định danh Cá nhân
+                        </h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng cửa sổ"></button>
+                    </div>
+                    
+                    <div class="modal-body px-5 py-4 bg-white">
+                        
+                        <div class="alert alert-info border-0 rounded-3 mb-4 d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-circle-info fs-3"></i>
+                            <div>
+                                <strong>Lưu ý quan trọng:</strong> 
+                                Các thông tin bạn cung cấp dưới đây sẽ liên kết chặt chẽ vào cơ sở dữ liệu hệ thống (Bảng <code>users</code> và <code>ho_so_ca_nhan</code>) và hiển thị công khai tới mọi người dùng khác.
+                            </div>
+                        </div>
 
+                        <div class="row g-4">
+                            
+                            <div class="col-md-6">
+                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Dữ liệu Học Vụ (Bảng Users)</h6>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-dark fs-6">Bí danh (Username) <span class="text-danger">*</span></label>
+                                    <input 
+                                        type="text" 
+                                        class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-3" 
+                                        name="username" 
+                                        value="<?= htmlspecialchars($user_name); ?>" 
+                                        required
+                                        placeholder="Ví dụ: NguyenVanA_Khoi9"
+                                    >
+                                    <div class="form-text mt-2"><i class="fa-solid fa-shield-halved text-success"></i> Đây là tên để bạn bè dễ dàng tìm kiếm.</div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-dark fs-6">Trường Phổ thông Cơ sở/THPT</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-secondary-subtle"><i class="fa-solid fa-school text-muted"></i></span>
+                                        <input 
+                                            type="text" 
+                                            class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-end-3" 
+                                            name="truong_hoc" 
+                                            value="<?= htmlspecialchars($truong_hoc); ?>" 
+                                            placeholder="Gõ tên trường đầy đủ..."
+                                        >
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-dark fs-6">Học viện / Đại học / Cao đẳng</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-secondary-subtle"><i class="fa-solid fa-building-columns text-muted"></i></span>
+                                        <input 
+                                            type="text" 
+                                            class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-end-3" 
+                                            name="truong_dai_hoc" 
+                                            value="<?= htmlspecialchars($truong_dai_hoc); ?>" 
+                                            placeholder="Gõ tên trường đại học..."
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 d-flex flex-column">
+                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Tự Giới Thiệu (Bảng Hồ Sơ)</h6>
+                                
+                                <div class="mb-3 flex-grow-1 d-flex flex-column">
+                                    <label class="form-label fw-bold text-dark fs-6">Viết bài luận định danh về bản thân</label>
+                                    <textarea 
+                                        class="form-control border-secondary-subtle p-3 fw-medium rounded-3 flex-grow-1" 
+                                        name="thong_tin_dinh_danh" 
+                                        placeholder="Hãy dùng ô văn bản này để viết các thông tin mở rộng như: Sở thích học tập, châm ngôn sống, nơi sinh sống, hay các thành tích giải thưởng bạn đạt được... (Hệ thống sẽ giữ nguyên định dạng xuống dòng)"
+                                        style="resize: none; min-height: 200px;"
+                                    ><?= htmlspecialchars($thong_tin_dinh_danh); ?></textarea>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div> <div class="modal-footer bg-light border-top-0 py-4 px-5 rounded-bottom-4 justify-content-between">
+                        <small class="text-muted fw-medium"><i class="fa-solid fa-lock text-success"></i> Bảo mật bởi PDO MySQL</small>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm border" data-bs-dismiss="modal">Hủy tác vụ</button>
+                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-pill shadow-sm">Đồng bộ Dữ liệu CSDL</button>
+                        </div>
+                    </div>
+                </div> </form>
         </div>
     </div>
 
-    <div class="toast-container">
-        <div id="liveToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-warning text-dark border-0">
-                <i class="fa-solid fa-khanda me-2"></i>
-                <strong class="me-auto">Hệ thống Thách đấu</strong>
-                <small>Vừa xong</small>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body bg-white fw-medium">
-                Tính năng tạo lời thách đấu mới đang trong giai đoạn Beta. Sắp ra mắt!
-            </div>
+    <div 
+        class="modal fade" 
+        id="addDocModal" 
+        tabindex="-1" 
+        aria-labelledby="addDocModalLabel" 
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="add_document">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    
+                    <div class="modal-header bg-success text-white border-0 py-4 px-4">
+                        <h4 class="modal-title fw-bold" id="addDocModalLabel">
+                            <i class="fa-solid fa-cloud-arrow-up me-2 fs-3 align-middle"></i> Tải Tài liệu lên Máy chủ
+                        </h4>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng cửa sổ"></button>
+                    </div>
+                    
+                    <div class="modal-body p-4 bg-white">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark fs-6">Định danh Tên Tài Liệu <span class="text-danger">*</span></label>
+                            <input 
+                                type="text" 
+                                class="form-control form-control-lg border-secondary-subtle fw-medium fs-6 rounded-3" 
+                                name="ten_tai_lieu" 
+                                placeholder="Ghi rõ bộ môn và chuyên đề. VD: Vật Lý 9 - Cấu tạo thấu kính hội tụ..." 
+                                required
+                            >
+                        </div>
+                        
+                        <div class="mb-2 p-4 border border-dashed border-2 border-secondary-subtle rounded-3 text-center bg-light">
+                            <i class="fa-solid fa-file-pdf fs-1 text-danger mb-3 d-block"></i>
+                            <label class="form-label fw-bold text-dark fs-6 d-block mb-3">Kéo thả tệp tin vào đây hoặc chọn từ thiết bị</label>
+                            <input type="file" class="form-control mx-auto w-75 shadow-sm" name="file_tai_lieu" disabled>
+                            
+                            <div class="alert alert-warning border-0 mt-4 text-start mb-0 small">
+                                <i class="fa-solid fa-triangle-exclamation text-danger fw-bold me-1"></i> <strong>Chế độ Safe Mode:</strong> 
+                                Để bảo vệ CSDL khỏi file chứa mã độc, luồng Upload tệp tin gốc đang tạm khóa. Nhấn nút Tải lên để kích hoạt luồng <code>INSERT MOCK (Dữ liệu tĩnh)</code> ghi thẳng vào DB bảng <code>tai_lieu</code>.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer border-0 py-3 px-4 bg-light">
+                        <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Từ chối thao tác</button>
+                        <button type="submit" class="btn btn-success fw-bold px-5 py-2 rounded-pill shadow-sm">Bắt đầu tải lên Database</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <script src='./assets/js/trang-ca-nhan.js'></script>
+    <div 
+        class="modal fade" 
+        id="addEventModal" 
+        tabindex="-1" 
+        aria-labelledby="addEventModalLabel" 
+        aria-hidden="true"
+    >
+        <div class="modal-dialog modal-dialog-centered">
+            
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="add_event">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                    
+                    <div class="modal-header bg-warning border-0 py-4 px-4">
+                        <h4 class="modal-title fw-bold text-dark" id="addEventModalLabel">
+                            <i class="fa-solid fa-calendar-plus me-2 fs-3 align-middle"></i> Quản trị Lịch trình
+                        </h4>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng cửa sổ"></button>
+                    </div>
+                    
+                    <div class="modal-body p-4 bg-white">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark fs-6">Định danh Chủ đề Hội thảo / Buổi học <span class="text-danger">*</span></label>
+                            <input 
+                                type="text" 
+                                class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-3" 
+                                name="ten_su_kien" 
+                                placeholder="Ghi rõ tên khóa học / sự kiện..." 
+                                required
+                            >
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-dark fs-6">Ấn định Thời gian Khởi chiếu (Live) <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-primary text-white border-primary"><i class="fa-solid fa-clock"></i></span>
+                                <input 
+                                    type="datetime-local" 
+                                    class="form-control border-secondary-subtle py-2 px-3 fw-medium" 
+                                    name="ngay_su_kien" 
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-dark fs-6">Nền tảng / Máy chủ Liên kết (Google Meet/Zoom) <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm">
+                                <span class="input-group-text bg-danger text-white border-danger"><i class="fa-solid fa-video"></i></span>
+                                <input 
+                                    type="text" 
+                                    class="form-control border-secondary-subtle py-2 px-3 fw-medium" 
+                                    name="dia_diem" 
+                                    placeholder="Dán link phòng họp ảo (URL) hoặc ghi vị trí vật lý..." 
+                                    required
+                                >
+                            </div>
+                        </div>
+                        
+                    </div>
+                    
+                    <div class="modal-footer border-top-0 py-4 px-4 bg-light justify-content-between">
+                        <small class="text-muted fw-bold"><i class="fa-solid fa-bell text-warning"></i> Sự kiện sẽ phát thông báo toàn máy chủ</small>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Trở về</button>
+                            <button type="submit" class="btn btn-warning fw-bold px-5 py-2 rounded-pill shadow-sm text-dark">Phát hành Lịch</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>
