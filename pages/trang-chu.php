@@ -1,189 +1,254 @@
 <?php
-// PHẦN 1: KẾT NỐI DATABASE VÀ CHUẨN BỊ BIẾN
-require_once '../config/config.php';
-$currentUser = [
-    'id'         => 1,                                      // users.user_id
-    'name'       => 'Alex Nguyễn',                          // users.full_name
-    'avatar'     => 'https://i.pravatar.cc/150?img=12',     // users.avatar_url
-    'xp'         => 1520,                                   // users.xp_points
-    'xp_rank'    => 'Top 5%',                               // Tính từ bảng xếp hạng
-    'streak'     => 15,                                     // users.streak_days
-    'profile_url'=> 'trang-ca-nhan.php',                    // Đường dẫn trang cá nhân
-];
+session_start();
 
-// --- STORIES / FLASHCARD SNAPS (stories) ---
-$stories = [
-    [
-        'id'         => 1,                                  // stories.story_id
-        'user_name'  => 'Minh Tuấn',                        // users.full_name
-        'user_avatar'=> 'https://i.pravatar.cc/150?img=5',  // users.avatar_url
-        'image'      => 'https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=300&q=80', // stories.media_url
-        'caption'    => 'Mindmap Lý 9',                     // stories.caption
-        'has_border' => true,                               // Hiệu ứng: story chưa xem
-    ],
-    [
-        'id'         => 2,
-        'user_name'  => 'Hoàng Oanh',
-        'user_avatar'=> 'https://i.pravatar.cc/150?img=9',
-        'image'      => 'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=300&q=80',
-        'caption'    => 'Từ vựng IELTS',
-        'has_border' => false,                              // Story đã xem
-    ],
-    [
-        'id'         => 3,
-        'user_name'  => 'Trần Phong',
-        'user_avatar'=> 'https://i.pravatar.cc/150?img=11',
-        'image'      => 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=300&q=80',
-        'caption'    => 'Review Design',
-        'has_border' => true,
-    ],
-];
+// ======================================================
+// 1. KẾT NỐI DATABASE
+// ======================================================
+require_once '../config/config.php'; 
+// =========================================================================================
+// PHẦN 1: ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH XỬ LÝ NGHIỆP VỤ & BẢO MẬT
+// =========================================================================================
 
-// --- BÀI ĐĂNG TRÊN BẢNG TIN (posts + users + groups) ---
-$posts = [
-    [
-        'id'            => 1,                               // posts.post_id
-        'author_id'     => 2,                               // posts.user_id
-        'author_name'   => 'Lê Minh Tuấn',                 // users.full_name
-        'author_avatar' => 'https://i.pravatar.cc/150?img=5', // users.avatar_url
-        'is_verified'   => true,                            // users.is_verified
-        'time_ago'      => '2 giờ trước',                   // Tính từ posts.created_at
-        'group_name'    => 'Toán Lý Hóa Khối 9',           // groups.group_name
-        'group_url'     => '#',                             // groups.group_id → URL
-        'content'       => 'Vừa tổng hợp xong đề cương ôn tập thi Học kỳ 2 môn Vật Lý phần Quang Học. Các bạn trong nhóm tham khảo để cuối tuần mình làm bài test thử trên Bunny luôn nha! 📚✨', // posts.content
-        'tags'          => ['#VatLy9', '#OnThiHK2'],        // post_tags → tags.tag_name
-        'type'          => 'document',                      // posts.post_type
-        'document'      => [
-            'name'      => 'DeCuong_QuangHoc_HK2.pdf',     // documents.file_name
-            'size'      => '2.4 MB',                        // documents.file_size
-            'url'       => '#',                             // documents.file_url
-            'icon_class'=> 'fa-file-pdf',                   // Xác định từ documents.file_type
-            'icon_color'=> 'text-danger',
-            'icon_bg'   => 'bg-danger bg-opacity-10',
-        ],
-        'reactions_count'=> 145,                            // COUNT từ post_reactions
-        'comments_count' => 24,                             // COUNT từ post_comments
-        'downloads_count'=> 12,                             // documents.download_count
-    ],
-    [
-        'id'            => 2,
-        'author_id'     => 3,
-        'author_name'   => 'Trần Phong',
-        'author_avatar' => 'https://i.pravatar.cc/150?img=11',
-        'is_verified'   => false,
-        'time_ago'      => '5 giờ trước',
-        'group_name'    => null,                            // Bài đăng công khai, không thuộc nhóm
-        'privacy_icon'  => '🌍',                            // posts.privacy ('public')
-        'content'       => 'Làm sao để tính toán giá trị vòng đời khách hàng (CLV) trong mô hình C2C khi dữ liệu mua lặp lại không ổn định mọi người nhỉ? Đang kẹt chỗ này trong dự án phân tích kinh doanh. Mọi người cho xin ý kiến với! 😰',
-        'tags'          => ['#BabeNobuli', '#ECommerce', '#BusinessModel'],
-        'type'          => 'question',                      // posts.post_type
-        'document'      => null,
-        'reactions_count'=> 32,
-        'comments_count' => 18,
-        'downloads_count'=> 0,
-    ],
-];
+/**
+ * Hàm lọc dữ liệu đầu vào (Sanitize Input) chống XSS
+ * [GIẢI THÍCH PHP]: Xóa khoảng trắng thừa, xóa backslash, và biến đổi các thẻ HTML 
+ * nguy hiểm (như <script>) thành mã an toàn để tránh tin tặc tấn công XSS.
+ */
+function sanitize_input($data) {
+    if (is_null($data)) return "";
+    $data = trim($data);
+    $data = stripslashes($data);
+    $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    return $data;
+}
 
-// --- XU HƯỚNG HỌC TẬP / TRENDING TAGS (tags + post_tags) ---
-$trendingTags = [
-    [
-        'tag'   => '#BabeNobuli_Project',                   // tags.tag_name
-        'count' => '1.2k bài thảo luận',                   // COUNT post_tags
-    ],
-    [
-        'tag'   => '#Figma_Design_System',
-        'count' => '850 tài liệu mới',
-    ],
-    [
-        'tag'   => '#ĐềThiThử_Lý9',
-        'count' => '540 lượt thi hôm nay',
-    ],
-];
+/**
+ * Hàm loại bỏ dấu Tiếng Việt cho chuỗi (Dùng để chuẩn hóa tên file)
+ * [GIẢI THÍCH PHP]: Dùng Regex để quét và thay thế các ký tự có dấu thành không dấu.
+ */
+function remove_vietnamese_accents($str) {
+    $unicode = array(
+        'a'=>'á|à|ả|ã|ạ|ă|ắ|ặ|ằ|ẳ|ẵ|â|ấ|ầ|ẩ|ẫ|ậ',
+        'd'=>'đ',
+        'e'=>'é|è|ẻ|ẽ|ẹ|ê|ế|ề|ể|ễ|ệ',
+        'i'=>'í|ì|ỉ|ĩ|ị',
+        'o'=>'ó|ò|ỏ|õ|ọ|ô|ố|ồ|ổ|ỗ|ộ|ơ|ớ|ờ|ở|ỡ|ợ',
+        'u'=>'ú|ù|ủ|ũ|ụ|ư|ứ|ừ|ử|ữ|ự',
+        'y'=>'ý|ỳ|ỷ|ỹ|ỵ',
+        'A'=>'Á|À|Ả|Ã|Ạ|Ă|Ắ|Ặ|Ằ|Ẳ|Ẵ|Â|Ấ|Ầ|Ẩ|Ẫ|Ậ',
+        'D'=>'Đ',
+        'E'=>'É|È|Ẻ|Ẽ|Ẹ|Ê|Ế|Ề|Ể|Ễ|Ệ',
+        'I'=>'Í|Ì|Ỉ|Ĩ|Ị',
+        'O'=>'Ó|Ò|Ỏ|Õ|Ọ|Ô|Ố|Ồ|Ổ|Ỗ|Ộ|Ơ|Ớ|Ờ|Ở|Ỡ|Ợ',
+        'U'=>'Ú|Ù|Ủ|Ũ|Ụ|Ư|Ứ|Ừ|Ử|Ữ|Ự',
+        'Y'=>'Ý|Ỳ|Ỷ|Ỹ|Ỵ',
+    );
+    foreach($unicode as $nonUnicode=>$uni){
+        $str = preg_replace("/($uni)/i", $nonUnicode, $str);
+    }
+    return $str;
+}
 
-// --- TOP ĐÓNG GÓP (users + leaderboard) ---
-$topContributors = [
-    [
-        'rank'         => 1,                                // leaderboard.rank
-        'user_id'      => 1,                               // users.user_id
-        'name'         => 'Alex Nguyễn',                   // users.full_name
-        'avatar'       => 'https://i.pravatar.cc/150?img=12', // users.avatar_url
-        'carrots'      => 520,                             // leaderboard.score / xp_points
-        'border_class' => 'border-warning',                // Hạng 1 = vàng
-    ],
-    [
-        'rank'         => 2,
-        'user_id'      => 2,
-        'name'         => 'Minh Tuấn',
-        'avatar'       => 'https://i.pravatar.cc/150?img=5',
-        'carrots'      => 480,
-        'border_class' => 'border-secondary',              // Hạng 2 = bạc
-    ],
-];
+/**
+ * Hàm tính thời gian tương đối
+ * [GIẢI THÍCH PHP]: Nhận vào chuỗi DATETIME từ DB, so sánh với giờ hiện tại của máy chủ,
+ * và quy đổi ra định dạng "Vừa xong", "5 phút trước", "2 giờ trước"...
+ */
+function time_elapsed_string($datetime, $full = false) {
+    $now = new DateTime;
+    $ago = new DateTime($datetime);
+    $diff = $now->diff($ago);
 
-// --- BẠN BÈ ĐANG ONLINE (users + user_sessions / presence) ---
-$onlineFriends = [
-    [
-        'user_id'   => 4,                                  // users.user_id
-        'name'      => 'Hoàng Oanh',                       // users.full_name
-        'avatar'    => 'https://i.pravatar.cc/150?img=9',  // users.avatar_url
-        'status'    => 'online',                           // user_sessions.status: 'online' | 'away'
-    ],
-    [
-        'user_id'   => 3,
-        'name'      => 'Trần Phong',
-        'avatar'    => 'https://i.pravatar.cc/150?img=11',
-        'status'    => 'away',
-    ],
-    [
-        'user_id'   => 5,
-        'name'      => 'Chi Lê',
-        'avatar'    => 'https://i.pravatar.cc/150?img=4',
-        'status'    => 'online',
-    ],
-];
+    // Tính toán số tuần
+    $diff->w = floor($diff->d / 7);
+    $diff->d -= $diff->w * 7;
 
-// --- LỐI TẮT NHÓM / DỰ ÁN (user_shortcuts → groups / projects) ---
-$shortcuts = [
-    [
-        'label'      => 'Thiết kế UI/UX',                  // groups.group_name
-        'icon_type'  => 'img',
-        'icon_src'   => 'https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg',
-        'url'        => '#',                                // groups.group_id → URL
-    ],
-    [
-        'label'      => 'Ôn thi Vật Lý 9',
-        'icon_type'  => 'fa',
-        'icon_fa'    => 'fa-atom',
-        'icon_bg'    => 'background:#E0F2FE;color:#0284C7;',
-        'url'        => '#',
-    ],
-    [
-        'label'      => 'Dự án Babe Nobuli',
-        'icon_type'  => 'fa',
-        'icon_fa'    => 'fa-chart-line',
-        'icon_bg'    => 'background:#FEF3C7;color:#D97706;',
-        'url'        => '#',
-    ],
-];
+    $string = array(
+        'y' => 'năm',
+        'm' => 'tháng',
+        'w' => 'tuần',
+        'd' => 'ngày',
+        'h' => 'giờ',
+        'i' => 'phút',
+        's' => 'giây',
+    );
+    foreach ($string as $k => &$v) {
+        if ($diff->$k) {
+            $v = $diff->$k . ' ' . $v;
+        } else {
+            unset($string[$k]);
+        }
+    }
 
-// ============================================================
-// PHẦN 2: THỰC THI SQL (QUERY, PROCEDURE, TRIGGER)
-// ============================================================
-// Ví dụ khi kết nối DB thật (bỏ comment khi có config.php):
-//
-// $stmt = $pdo->prepare("SELECT * FROM users WHERE user_id = ?");
-// $stmt->execute([$_SESSION['user_id']]);
-// $currentUser = $stmt->fetch(PDO::FETCH_ASSOC);
-//
-// $posts = $pdo->query("
-//     SELECT p.*, u.full_name, u.avatar_url, u.is_verified,
-//            TIMESTAMPDIFF(HOUR, p.created_at, NOW()) as hours_ago
-//     FROM posts p
-//     JOIN users u ON p.user_id = u.user_id
-//     ORDER BY p.created_at DESC
-//     LIMIT 20
-// ")->fetchAll(PDO::FETCH_ASSOC);
+    if (!$full) $string = array_slice($string, 0, 1);
+    return $string ? implode(', ', $string) . ' trước' : 'Vừa xong';
+}
+
+/**
+ * TẠO CSRF TOKEN CHỐNG GIẢ MẠO REQUEST
+ * [GIẢI THÍCH PHP]: Tạo một mã băm ngẫu nhiên 32 byte lưu vào phiên làm việc (Session).
+ * Token này sẽ được chèn ẩn vào mọi Form. Nếu hacker giả mạo Form từ trang khác gửi đến,
+ * do không có Token khớp với Session, request sẽ bị chặn lại lập tức.
+ */
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrf_token = $_SESSION['csrf_token'];
+
+// =====================================================================================
+// PHẦN 2: KHỞI TẠO BIẾN TRỐNG
+// =====================================================================================
+
+$page_title          = "Trang cá nhân";
+
+// Các biến lưu thông tin cơ bản định danh từ bảng `users`
+$user_name           = "";
+$user_type           = "";
+$truong_hoc          = "";
+$truong_dai_hoc      = "";
+$is_verified         = false; // Cờ kiểm tra tài khoản đã xác thực chưa
+
+// Biến thông tin mở rộng từ bảng `ho_so_ca_nhan`
+$thong_tin_dinh_danh = "";
+
+// Do CSDL chưa thiết kế không có cột upload ảnh, ta gán ảnh dự phòng (Fallback Image)
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$user_cover          = "../assets/img/default-cover.jpg";
+
+// Khởi tạo các biến chứa dữ liệu số đếm bằng 0
+$stats_xp            = 0;
+$stats_buddies       = 0;
+$stats_docs          = 0;
+
+// Biến lưu trữ văn bản thông báo trả về (Alert)
+$message_notify      = ""; 
+// Biến xác định màu cảnh báo của Bootstrap (success: xanh, danger: đỏ, warning: vàng)
+$message_type        = "success"; 
+
+// [LƯU Ý PHP]: Lấy ID người dùng từ Session. Nếu chưa có chức năng đăng nhập,
+// tạm thời hard-code là 1 (Tài khoản Admin đầu tiên) để có dữ liệu Test.
+// ID của người đang đăng nhập (Bạn)
+$current_user_id = $_SESSION['user_id'] ?? 1; 
+// Lấy ID của chủ nhân trang cá nhân (Lấy từ URL, nếu không có thì mặc định là nhà của bạn)
+$profile_id = isset($_GET['id']) ? (int)$_GET['id'] : $current_user_id;
+
+// Khởi tạo mảng rỗng để hứng dữ liệu từ CSDL, tránh văng lỗi nếu DB trống
+$posts_data          = [];
+$buddies_data        = [];
+$docs_data           = [];
+$events_data         = [];
+
+// =====================================================================================
+// PHẦN 3: THIẾT LẬP KẾT NỐI ĐẾN CƠ SỞ DỮ LIỆU (PDO MYSQL)
+// =====================================================================================
+
+try {
+    // [GIẢI THÍCH PHP]: DSN (Data Source Name) là chuỗi chứa thông tin host, tên DB và bộ mã.
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    
+    // Cấu hình các đặc tính vận hành cho PDO
+    $options = [
+        // Bắt lỗi dưới dạng Ngoại lệ (Exception) để dễ dàng bắt bằng try-catch
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
+        // Trả về dữ liệu dạng mảng có key là tên cột (Associative Array)
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       
+        // Vô hiệu hóa giả lập prepare để chống SQL Injection sâu từ lõi
+        PDO::ATTR_EMULATE_PREPARES   => false,                  
+    ];
+    
+    // Mở kết nối
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    
+} catch (PDOException $e) {
+    // Nếu sai mật khẩu hoặc sập Database, dừng load trang và báo lỗi
+    die("Hệ thống gián đoạn. Không thể kết nối cơ sở dữ liệu: " . $e->getMessage());
+}
+
+
+// ======================================================
+// 4. CSRF TOKEN
+// ======================================================
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+$csrf_token = $_SESSION['csrf_token'];
+// ======================================================
+// Lấy username
+// ======================================================
+$sql_profile = "
+    SELECT
+        u.username,
+        u.giay_to_chung_minh
+    FROM users u
+    WHERE u.id = :id
+";
+// ======================================================
+// 5. LẤY DANH SÁCH TẤT CẢ BÀI ĐĂNG TRANG CHỦ
+// ======================================================
+$sql_posts = "
+    SELECT 
+        b.id AS post_id,
+        b.noi_dung,
+        b.created_at,
+        b.user_id,
+
+        u.username,
+        u.giay_to_chung_minh,
+
+        (
+            SELECT COUNT(*)
+            FROM luot_thich lt
+            WHERE lt.bai_dang_id = b.id
+        ) AS total_likes,
+
+        (
+            SELECT COUNT(*)
+            FROM binh_luan bl
+            WHERE bl.bai_dang_id = b.id
+        ) AS total_comments,
+
+        (
+            SELECT COUNT(*)
+            FROM luot_chia_se cs
+            WHERE cs.bai_dang_id = b.id
+        ) AS total_shares,
+
+        (
+            SELECT COUNT(*)
+            FROM luot_thich lt2
+            WHERE lt2.bai_dang_id = b.id
+            AND lt2.user_id = :uid
+        ) AS is_liked_by_me
+
+    FROM bai_dang b
+    INNER JOIN users u 
+        ON b.user_id = u.id
+
+    ORDER BY b.created_at DESC
+";
+
+$stmt_posts = $pdo->prepare($sql_posts);
+
+$stmt_posts->execute([
+    'uid' => $current_user_id
+]);
+
+$posts_data = $stmt_posts->fetchAll(PDO::FETCH_ASSOC) ?? [];
+
+
+// ======================================================
+// 6. TRENDING TAGS (TẠM ĐỂ RỖNG)
+// ======================================================
+$trendingTags = [];
+
+
+// ======================================================
+// 7. BẠN ONLINE (TẠM ĐỂ RỖNG)
+// ======================================================
+$onlineFriends = [];
 ?>
+```
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -201,47 +266,7 @@ $shortcuts = [
 
     <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
 
-    <!-- ====== NAVBAR ====== -->
-    <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
-        <div class="d-flex align-items-center gap-4">
-            <a href="trang-chu.php" class="brand-logo text-decoration-none">
-                <i class="fa-solid fa-carrot"></i> THE BUNNY
-            </a>
-            
-            <div class="search-bar d-none d-md-flex">
-                <i class="fa-solid fa-search text-muted"></i>
-                <input type="text" placeholder="Tìm kiếm tài liệu, bạn học..." />
-            </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-3">
-            <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
-                <i class="fa-solid fa-khanda"></i>
-            </a>
-            
-            <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
-                <i class="fa-brands fa-facebook-messenger"></i>
-            </a>
-            
-            <a href="notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
-                <i class="fa-solid fa-bell"></i>
-            </a>
-            
-            <!-- streak_days: users.streak_days -->
-            <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border d-none d-md-flex">
-                <i class="fa-solid fa-fire text-danger"></i>
-                <span class="fw-bold fs-6"><?= htmlspecialchars($currentUser['streak']) ?></span>
-            </div>
-            
-            <!-- Avatar người dùng: users.avatar_url, users.full_name -->
-            <a href="<?= htmlspecialchars($currentUser['profile_url']) ?>">
-                <img src="<?= htmlspecialchars($currentUser['avatar']) ?>"
-                     class="rounded-circle border cursor-pointer"
-                     width="40" height="40"
-                     alt="<?= htmlspecialchars($currentUser['name']) ?>">
-            </a>
-        </div>
-    </nav>
+    <?php include '../includes/header.php'; ?>
 
     <div class="layout-container">
 
@@ -249,190 +274,72 @@ $shortcuts = [
         <aside class="sidebar-left" id="sidebarLeft">
             <!-- users.full_name, users.avatar_url, users.xp_points, xp_rank -->
             <div class="user-mini d-none d-md-flex">
-                <img src="<?= htmlspecialchars($currentUser['avatar']) ?>"
-                     alt="<?= htmlspecialchars($currentUser['name']) ?>">
-                <div>
-                    <div class="name"><?= htmlspecialchars($currentUser['name']) ?></div>
-                    <div class="xp">
-                        <i class="fa-solid fa-fire text-danger"></i>
-                        <?= number_format($currentUser['xp']) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)
-                    </div>
+                <img 
+                    src="<?= htmlspecialchars($user_avatar ?? '../assets/img/default-avatar.jpg') ?>"
+                    alt="<?= htmlspecialchars($row_profile['username'] ?? 'Người dùng') ?>"
+                >
+            <div>
+                <div class="name">
+                    <?= htmlspecialchars($row_profile['username'] ?? 'Người dùng') ?>
                 </div>
             </div>
+</div>
 
             <div class="nav-menu">
-                <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm) <span class="badge-count">3</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-calendar-check"></i> Sự Kiện</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-bookmark"></i> Đã Lưu</a>
+                <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
+                <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm) <span class="badge-count">3</span></a>
+                <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
             </div>
             
             <hr class="my-3 text-muted opacity-25">
-            
-            <h6 class="text-muted fw-bold small ms-3 mb-3 text-uppercase">Lối tắt của bạn</h6>
-            <div class="nav-menu">
-                <!-- Loop qua $shortcuts: user_shortcuts JOIN groups/projects -->
-                <?php foreach ($shortcuts as $sc): ?>
-                <a href="<?= htmlspecialchars($sc['url']) ?>" class="nav-item py-2">
-                    <?php if ($sc['icon_type'] === 'img'): ?>
-                        <img src="<?= htmlspecialchars($sc['icon_src']) ?>" width="24" class="rounded">
-                    <?php else: ?>
-                        <div class="btn-icon" style="width:24px;height:24px;<?= $sc['icon_bg'] ?>">
-                            <i class="fa-solid <?= htmlspecialchars($sc['icon_fa']) ?> fs-6"></i>
-                        </div>
-                    <?php endif; ?>
-                    <?= htmlspecialchars($sc['label']) ?>
-                </a>
-                <?php endforeach; ?>
-            </div>
+
         </aside>
 
         <!-- ====== FEED CHÍNH ====== -->
         <main class="feed-main">
+
+            <!-- Form đăng bài mới -->
+<div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
+    <div class="card-body p-4">
+        <form method="POST" action="">
+            <input type="hidden" name="action" value="add_post">
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
             
-            <!-- STORIES: stories JOIN users -->
-            <div class="stories-container">
-                <!-- Nút tạo mới (tĩnh) -->
-                <div class="story-card story-create">
-                    <div class="story-create-btn"><i class="fa-solid fa-plus"></i></div>
-                    <div class="overlay"><span class="story-name">Tạo Flashcard</span></div>
-                </div>
-
-                <!-- Loop qua $stories -->
-                <?php foreach ($stories as $story): ?>
-                <div class="story-card">
-                    <!-- stories.media_url -->
-                    <img src="<?= htmlspecialchars($story['image']) ?>"
-                         alt="<?= htmlspecialchars($story['caption']) ?>">
-                    <div class="overlay">
-                        <!-- users.avatar_url, border nếu chưa xem -->
-                        <img src="<?= htmlspecialchars($story['user_avatar']) ?>"
-                             class="story-avatar"
-                             <?= !$story['has_border'] ? 'style="border-color: transparent;"' : '' ?>>
-                        <!-- stories.caption -->
-                        <span class="story-name"><?= htmlspecialchars($story['caption']) ?></span>
-                    </div>
-                </div>
-                <?php endforeach; ?>
+            <div class="d-flex gap-3">
+                <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border border-2 border-light shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Ảnh bạn">
+                
+                <textarea 
+                    class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6" 
+                    name="noidung_post" 
+                    rows="3" 
+                    placeholder="Bạn muốn đăng tải nội dung học thuật gì lên mạng xã hội hôm nay?..." 
+                    required 
+                    style="resize: none;"
+                ></textarea>
             </div>
-
-            <!-- COMPOSER (ô đăng bài) -->
-            <div class="card-bunny">
-                <div class="composer-input-area">
-                    <!-- users.avatar_url -->
-                    <img src="<?= htmlspecialchars($currentUser['avatar']) ?>"
-                         class="rounded-circle" width="40" height="40"
-                         alt="<?= htmlspecialchars($currentUser['name']) ?>">
-                    <input type="text" placeholder="Bạn muốn chia sẻ kiến thức hay tài liệu gì?">
-                </div>
-                <div class="composer-actions">
-                    <button class="btn-composer text-danger"><i class="fa-solid fa-file-pdf"></i> <span class="d-none d-sm-inline">Tài liệu</span></button>
-                    <button class="btn-composer text-primary"><i class="fa-solid fa-circle-question"></i> <span class="d-none d-sm-inline">Hỏi bài</span></button>
-                    <button class="btn-composer text-success"><i class="fa-solid fa-list-check"></i> <span class="d-none d-sm-inline">Tạo Quiz</span></button>
-                </div>
-            </div>
-
-            <!-- BÀI ĐĂNG: Loop qua $posts -->
-            <?php foreach ($posts as $post): ?>
-            <div class="card-bunny">
-                <div class="post-header">
-                    <div class="d-flex gap-3">
-                        <!-- users.avatar_url -->
-                        <img src="<?= htmlspecialchars($post['author_avatar']) ?>"
-                             class="rounded-circle" width="44" height="44"
-                             alt="<?= htmlspecialchars($post['author_name']) ?>">
-                        <div>
-                            <!-- users.full_name, users.is_verified -->
-                            <div class="post-author">
-                                <?= htmlspecialchars($post['author_name']) ?>
-                                <?php if ($post['is_verified']): ?>
-                                    <i class="fa-solid fa-circle-check text-primary fs-6" title="Xác thực"></i>
-                                <?php endif; ?>
-                            </div>
-                            <!-- posts.created_at (tính khoảng cách), groups.group_name -->
-                            <div class="post-time">
-                                <?= htmlspecialchars($post['time_ago']) ?>
-                                <?php if (!empty($post['group_name'])): ?>
-                                    · Trong nhóm <strong><a href="<?= htmlspecialchars($post['group_url']) ?>"><?= htmlspecialchars($post['group_name']) ?></a></strong>
-                                <?php elseif (!empty($post['privacy_icon'])): ?>
-                                    · <?= $post['privacy_icon'] ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="btn btn-light rounded-circle border-0"><i class="fa-solid fa-ellipsis"></i></button>
+            
+            <hr class="text-muted border-dashed my-4 opacity-25">
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up PDF">
+                        <i class="fa-solid fa-file-pdf me-1"></i> Gắn PDF
+                    </button>
+                    <button type="button" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up ảnh">
+                        <i class="fa-solid fa-image me-1"></i> Hình ảnh
+                    </button>
                 </div>
                 
-                <!-- posts.content -->
-                <div class="post-content">
-                    <?= nl2br(htmlspecialchars($post['content'])) ?>
-                    <?php if (!empty($post['tags'])): ?>
-                    <br><br>
-                    <span class="post-tags">
-                        <?php foreach ($post['tags'] as $tag): ?>
-                            <?= htmlspecialchars($tag) ?>&nbsp;
-                        <?php endforeach; ?>
-                    </span>
-                    <?php endif; ?>
-                </div>
-
-                <!-- Nếu post_type = 'document': hiển thị documents -->
-                <?php if ($post['type'] === 'document' && $post['document']): ?>
-                <div class="doc-preview">
-                    <!-- documents.file_type → icon -->
-                    <div class="doc-icon <?= $post['document']['icon_bg'] ?> <?= $post['document']['icon_color'] ?>">
-                        <i class="fa-solid <?= $post['document']['icon_class'] ?>"></i>
-                    </div>
-                    <div class="flex-grow-1">
-                        <!-- documents.file_name -->
-                        <div class="fw-bold text-dark"><?= htmlspecialchars($post['document']['name']) ?></div>
-                        <!-- documents.file_size, documents.file_type -->
-                        <div class="text-muted small">Tài liệu PDF · <?= htmlspecialchars($post['document']['size']) ?></div>
-                    </div>
-                    <!-- documents.file_url -->
-                    <a href="<?= htmlspecialchars($post['document']['url']) ?>"
-                       class="btn btn-light border rounded-circle"
-                       style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;">
-                        <i class="fa-solid fa-download"></i>
-                    </a>
-                </div>
-                <?php endif; ?>
-
-                <!-- Thống kê: COUNT post_reactions, COUNT post_comments, documents.download_count -->
-                <div class="post-stats">
-                    <div>
-                        <?php if ($post['type'] === 'document'): ?>
-                            <i class="fa-solid fa-carrot text-warning bg-light p-1 rounded-circle"></i>
-                            <i class="fa-solid fa-thumbs-up text-primary bg-light p-1 rounded-circle"></i>
-                        <?php else: ?>
-                            <i class="fa-solid fa-lightbulb text-warning bg-light p-1 rounded-circle"></i>
-                        <?php endif; ?>
-                        <span class="fw-bold ms-1 text-dark"><?= number_format($post['reactions_count']) ?></span>
-                    </div>
-                    <div>
-                        <?php if ($post['type'] === 'document'): ?>
-                            <?= number_format($post['comments_count']) ?> Bình luận · <?= number_format($post['downloads_count']) ?> Lượt tải
-                        <?php else: ?>
-                            <?= number_format($post['comments_count']) ?> Câu trả lời
-                        <?php endif; ?>
-                    </div>
-                </div>
-                
-                <div class="reaction-btns">
-                    <?php if ($post['type'] === 'document'): ?>
-                        <button class="btn-composer"><i class="fa-regular fa-thumbs-up"></i> Hữu ích</button>
-                        <button class="btn-composer"><i class="fa-regular fa-comment"></i> Thảo luận</button>
-                        <button class="btn-composer"><i class="fa-regular fa-bookmark"></i> Lưu lại</button>
-                    <?php else: ?>
-                        <button class="btn-composer text-warning bg-warning bg-opacity-10"><i class="fa-solid fa-lightbulb"></i> Giải đáp</button>
-                        <button class="btn-composer"><i class="fa-solid fa-share"></i> Chia sẻ</button>
-                    <?php endif; ?>
-                </div>
+                <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
+                    <i class="fa-solid fa-paper-plane me-2"></i> Gửi bài viết
+                </button>
             </div>
-            <?php endforeach; ?>
+        </form>
+    </div>
+</div>
+
+            <!-- BÀI ĐĂNG -->
+            <?php include '../includes/danh-sach-bai-dang.php'; ?>
 
         </main>
 
@@ -448,30 +355,6 @@ $shortcuts = [
                     <span class="hash"><?= htmlspecialchars($tag['tag']) ?></span>
                     <!-- COUNT từ post_tags -->
                     <span class="count"><?= htmlspecialchars($tag['count']) ?></span>
-                </div>
-                <?php endforeach; ?>
-            </div>
-
-            <!-- TOP ĐÓNG GÓP: leaderboard JOIN users -->
-            <div class="card-bunny p-3 mb-3">
-                <div class="section-title">Top Đóng Góp <i class="fa-solid fa-trophy text-warning"></i></div>
-                <?php foreach ($topContributors as $contributor): ?>
-                <div class="d-flex align-items-center gap-3 mb-3">
-                    <!-- leaderboard.rank -->
-                    <div class="fw-bold text-muted"><?= $contributor['rank'] ?></div>
-                    <!-- users.avatar_url -->
-                    <img src="<?= htmlspecialchars($contributor['avatar']) ?>"
-                         class="rounded-circle border <?= $contributor['border_class'] ?> border-2"
-                         width="32"
-                         alt="<?= htmlspecialchars($contributor['name']) ?>">
-                    <!-- users.full_name -->
-                    <div class="flex-grow-1 lh-1">
-                        <span class="fw-bold text-sm"><?= htmlspecialchars($contributor['name']) ?></span>
-                    </div>
-                    <!-- leaderboard.score / users.xp_points -->
-                    <span class="text-warning fw-bold small">
-                        <?= number_format($contributor['carrots']) ?> <i class="fa-solid fa-carrot"></i>
-                    </span>
                 </div>
                 <?php endforeach; ?>
             </div>
