@@ -283,6 +283,14 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
         .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 9999; }
+
+        .btn-interaction { background-color: transparent; border: none; font-weight: bold; color: #6c757d; border-radius: 8px; transition: all 0.2s; }
+        .btn-interaction:hover { background-color: #f1f3f5; color: #495057; }
+        .btn-interaction.active-like { color: #0d6efd; } /* Nút Thích chuyển sang màu xanh dương nếu active */
+        .btn-interaction.active-like:hover { background-color: #e7f1ff; }
+        .comment-box { background-color: #f8f9fa; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+        .post-stats-text { font-size: 0.85rem; color: #6c757d; cursor: pointer; }
+        .post-stats-text:hover { text-decoration: underline; }
         
         /* Offcanvas Menu Customization */
         .offcanvas-bunny { background-color: var(--bg-card); width: 280px !important; }
