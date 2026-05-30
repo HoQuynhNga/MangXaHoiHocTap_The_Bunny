@@ -1,3 +1,4 @@
+console.log("THACH_DAU.JS LOADED");
 // JS Xử lý chọn đáp án
 function selectOption(element) {
     const options = document.querySelectorAll('.mcq-option');
@@ -14,4 +15,48 @@ function startBattle() {
 function inviteUser(userId)
 {
     alert("Đã gửi lời mời tới user ID: " + userId);
+}
+function startBattle()
+{
+    const opponentId =
+        document.getElementById("opponent_id").value;
+
+    const examSetId =
+        document.getElementById("exam_set_id").value;
+
+    const formData = new FormData();
+
+    formData.append(
+        "opponent_id",
+        opponentId
+    );
+
+    formData.append(
+        "exam_set_id",
+        examSetId
+    );
+
+    fetch(
+        "../ajax/create_battle.php",
+        {
+            method: "POST",
+            body: formData
+        }
+    )
+    .then(response => response.json())
+    .then(data => {
+
+        alert(data.message);
+
+        if(data.success)
+        {
+            location.reload();
+        }
+
+    })
+    .catch(error => {
+
+        console.error(error);
+
+    });
 }

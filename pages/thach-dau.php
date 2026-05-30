@@ -122,8 +122,8 @@ catch(PDOException $e)
     <title>Phòng Practice - The Bunny</title>
     
     <link href="../assets/css/root.css" rel="stylesheet">
-    <link href="../assets/css/thach-dau.css" rel="stylesheet">
-    <script src="../assets/js/thach-dau.js"></script>
+    <link href="../assets/css/thach_dau.css" rel="stylesheet">
+    <script src="../assets/js/thach_dau.js"></script>
     
 </head>
 <body>
@@ -435,9 +435,39 @@ catch(PDOException $e)
                     <p class="text-muted small mb-4">Biến phòng luyện tập này thành sàn đấu gay cấn. 10 câu hỏi theo danh mục hiện tại.</p>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted text-uppercase">Đối thủ (Trong phòng)</label>
-                        <select class="form-select bg-light border-0 fw-bold">
-                            <option value="all">Thách đấu tất cả mọi người</option>
-                            <option value="1">Lê Minh Tuấn</option>
+                            <label class="form-label fw-bold">
+                                Bộ đề
+                            </label>
+
+                            <select
+                                id="exam_set_id"
+                                class="form-select"
+                            >
+
+                                <option value="1">
+                                    Bộ đề Văn học
+                                </option>
+
+                                <option value="2">
+                                    Bộ đề Toán
+                                </option>
+
+                                <option value="3">
+                                    Bộ đề Tiếng Anh
+                                </option>
+
+                            </select>
+                        <select
+                            id="opponent_id"
+                            class="form-select bg-light border-0 fw-bold"
+                        >
+                            <?php foreach($onlineUsers as $user): ?>
+
+                                <option value="<?= $user['id'] ?>">
+                                    <?= htmlspecialchars($user['username']) ?>
+                                </option>
+
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-3 m-0 rounded-3">
