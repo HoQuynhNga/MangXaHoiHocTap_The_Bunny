@@ -84,8 +84,8 @@ try {
     <title>Phòng Practice - The Bunny</title>
     
     <link href="../assets/css/root.css" rel="stylesheet">
-    <link href="../assets/css/thach_dau.css" rel="stylesheet">
-    <script src="../assets/js/thach_dau.js"></script>
+    <link href="../assets/css/thach-dau.css" rel="stylesheet">
+    <script src="../assets/js/thach-dau.js"></script>
     
 </head>
 <body>
