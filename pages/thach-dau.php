@@ -83,9 +83,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phòng Practice - The Bunny</title>
     
-    <link href="./assets/css/root.css" rel="stylesheet">
-    <link href="./assets/css/thach_dau.css" rel="stylesheet">
-    <script src="./assets/js/thach_dau.js"></script>
+    <link href="../assets/css/root.css" rel="stylesheet">
+    <link href="../assets/css/thach_dau.css" rel="stylesheet">
+    <script src="../assets/js/thach_dau.js"></script>
     
 </head>
 <body>

@@ -609,45 +609,10 @@ try {
         <div style="height: 58px;"></div>
     <?php endif; ?>
 
-    <nav class="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
-        <div class="container d-flex justify-content-between align-items-center">
-            
-            <a class="navbar-brand fw-bold text-primary fs-3 d-flex align-items-center gap-2" href="#">
-                <i class="fa-solid fa-carrot text-warning"></i>
-                <span>The Bunny</span>
-            </a>
-            
-            <form class="d-none d-lg-flex w-50" role="search">
-                <div class="input-group">
-                    <span class="input-group-text bg-light border-end-0" id="search-addon">
-                        <i class="fa-solid fa-magnifying-glass text-muted"></i>
-                    </span>
-                    <input type="search" class="form-control bg-light border-start-0 ps-0" placeholder="Tra cứu bài viết, tài liệu, lớp học ảo..." aria-label="Tìm kiếm nhanh">
-                </div>
-            </form>
-            
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-light rounded-circle text-muted shadow-sm position-relative" aria-label="Trung tâm thông báo">
-                    <i class="fa-solid fa-bell"></i>
-                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
-                </button>
-                <button class="btn btn-light rounded-circle text-muted shadow-sm" aria-label="Hộp thư đến">
-                    <i class="fa-solid fa-message"></i>
-                </button>
-                
-                <div class="dropdown">
-                    <button class="btn border-0 p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Mở menu tài khoản">
-                        <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border shadow-sm" width="40" height="40" style="object-fit: cover;" alt="Cài đặt">
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
-                        <li><a class="dropdown-item fw-medium" href="#"><i class="fa-solid fa-gear me-2"></i>Thiết lập tài khoản</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item fw-medium text-danger" href="#"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất hệ thống</a></li>
-                    </ul>
-                </div>
-            </div>
-        </div>
+    <nav>
+    <?php include '../includes/header.php'; ?>
     </nav>
+
 
     <div class="container mt-4 mb-5">
         
