@@ -301,6 +301,9 @@ CREATE TABLE IF NOT EXISTS battle_invites (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE battle_invites
+ADD COLUMN room_id INT NOT NULL AFTER id;
+
 CREATE TABLE IF NOT EXISTS battle_rooms (
     room_id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -367,5 +370,28 @@ CREATE TABLE IF NOT EXISTS battle_participants (
         REFERENCES users(id),
 
     UNIQUE(room_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS battle_answers
+(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+
+    room_id INT NOT NULL,
+
+    user_id INT UNSIGNED NOT NULL,
+
+    question_id INT NOT NULL,
+
+    answer VARCHAR(20) NOT NULL,
+
+    is_correct TINYINT(1) DEFAULT 0,
+
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+
+    FOREIGN KEY (room_id)
+        REFERENCES battle_rooms(room_id),
+
+    FOREIGN KEY (user_id)
+        REFERENCES users(id),
 );
 SET FOREIGN_KEY_CHECKS = 1;

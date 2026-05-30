@@ -491,6 +491,47 @@ catch(PDOException $e)
             </div>
         </div>
     </div>
+    <div class="modal fade" id="battleInviteModal">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Thư mời thách đấu
+                </h5>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p id="inviteText"></p>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    class="btn btn-secondary"
+                    onclick="declineInvite()">
+                    Từ chối
+                </button>
+
+                <button
+                    class="btn btn-success"
+                    onclick="acceptInvite()">
+                    Chấp nhận
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- <script src="../assets/js/thach_dau.js"></script> -->
 </body>

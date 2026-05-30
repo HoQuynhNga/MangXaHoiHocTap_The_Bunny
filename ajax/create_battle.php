@@ -64,7 +64,7 @@ try
     $stmtInvite = $pdo->prepare("
         INSERT INTO battle_invites
         (
-            id,
+            room_id,
             sender_id,
             receiver_id
         )
