@@ -5,6 +5,7 @@
  * Tệp tin: trang-ca-nhan.php
  * Chức năng: Hiển thị hồ sơ cá nhân, dòng thời gian, tài liệu, sự kiện và bạn bè.
  * Xử lý: Đăng bài, Cập nhật thông tin, Thêm tài liệu, Tạo sự kiện (Tương tác trực tiếp DB).
+ * Khắc phục: Lỗi Parameter HY093, Lỗi Procedure bài đăng, Lỗi cột Tài liệu.
  * =========================================================================================
  */
 
@@ -82,11 +83,7 @@ $csrf_token = $_SESSION['csrf_token'];
 // PHẦN 2: KHỞI TẠO BIẾN TRỐNG (MẶC ĐỊNH LÀ RỖNG, KHÔNG SỬ DỤNG DỮ LIỆU MẪU)
 // =====================================================================================
 
-// [GIẢI THÍCH PHP]: Khởi tạo tất cả các biến hiển thị bằng giá trị rỗng hoặc mặc định an toàn.
-// Việc này giúp tránh lỗi "Undefined variable" khi mã HTML bên dưới gọi đến chúng
-// trong trường hợp truy vấn CSDL thất bại hoặc bảng CSDL đang rỗng.
-
-$page_title          = "Trang cá nhân";
+$page_title          = "Trang cá nhân - The Bunny";
 
 // Biến thông tin định danh cơ bản (Bảng users)
 $user_name           = "";
@@ -99,8 +96,8 @@ $is_verified         = false;
 $thong_tin_dinh_danh = "";
 
 // Do cấu trúc DB của bạn không có cột lưu đường dẫn ảnh, ta gán đường dẫn ảnh tĩnh
-$user_avatar         = "assets/images/default-avatar.png";
-$user_cover          = "assets/images/default-cover.png";
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$user_cover          = "../assets/img/default-cover.jpg";
 
 // Khởi tạo các biến thống kê dạng số nguyên (Integer)
 $stats_xp            = 0;
@@ -170,19 +167,21 @@ try {
         switch ($action) {
             
             // -------------------------------------------------------------------------
-            // LUỒNG 1: XỬ LÝ ĐĂNG BÀI VIẾT LÊN DÒNG THỜI GIAN
+            // LUỒNG 1: [ĐÃ FIX] XỬ LÝ ĐĂNG BÀI VIẾT BẰNG LỆNH INSERT TRỰC TIẾP
             // -------------------------------------------------------------------------
             case 'add_post':
                 if (!empty($_POST['noidung_post'])) {
                     $content = sanitize_input($_POST['noidung_post']);
                     
-                    // [GIẢI THÍCH SQL]: Gọi Stored Procedure create_post đã được viết ở Chương 4.
-                    // Procedure này nhận 5 tham số. Do chưa code tính năng đính kèm file, 
-                    // 3 tham số cuối được gán cứng giá trị NULL.
-                    $sql_call_proc = "CALL create_post(:uid, :content, NULL, NULL, NULL)";
-                    $stmt = $pdo->prepare($sql_call_proc);
+                    // [GIẢI THÍCH SQL]: CSDL của bạn không có Procedure create_post. 
+                    // Do đó, ta phải viết truy vấn INSERT trực tiếp vào bảng bai_dang.
+                    $sql_insert_post = "
+                        INSERT INTO bai_dang (user_id, noi_dung, created_at) 
+                        VALUES (:uid, :content, NOW())
+                    ";
+                    $stmt = $pdo->prepare($sql_insert_post);
                     
-                    // Thực thi Procedure
+                    // Thực thi Insert
                     $stmt->execute([
                         'uid'     => $current_user_id, 
                         'content' => $content
@@ -197,7 +196,7 @@ try {
                 break;
                 
             // -------------------------------------------------------------------------
-            // LUỒNG 2: XỬ LÝ CẬP NHẬT THÔNG TIN HỒ SƠ
+            // LUỒNG 2: XỬ LÝ CẬP NHẬT THÔNG TIN HỒ SƠ CHUNG (USERS + HO_SO_CA_NHAN)
             // -------------------------------------------------------------------------
             case 'edit_profile':
                 // Tiến hành làm sạch dữ liệu từ Form gửi lên
@@ -224,9 +223,7 @@ try {
                 ]);
 
                 // [BƯỚC 2]: Cập nhật bảng 'ho_so_ca_nhan'
-                // [GIẢI THÍCH SQL]: Bảng này có cấu trúc 1-1 với users. Tuy nhiên, lúc mới
-                // tạo tài khoản có thể chưa có dòng nào trong bảng này. Ta dùng cơ chế
-                // INSERT ... ON DUPLICATE KEY UPDATE để tự động chèn mới hoặc ghi đè.
+                // [GIẢI THÍCH SQL]: Cơ chế UPSERT. Nếu chưa có -> INSERT, có rồi -> UPDATE.
                 $sql_upsert_profile = "
                     INSERT INTO ho_so_ca_nhan (user_id, thong_tin_dinh_danh) 
                     VALUES (:id, :ttdd) 
@@ -239,31 +236,33 @@ try {
                     'ttdd' => $tt_dinh_danh
                 ]);
                 
-                $message_notify = "Hồ sơ năng lực của bạn đã được lưu!";
+                $message_notify = "Hồ sơ năng lực của bạn đã được cập nhật đồng bộ!";
                 $message_type   = "success";
                 break;
 
             // -------------------------------------------------------------------------
-            // LUỒNG 3: XỬ LÝ TẢI LÊN TÀI LIỆU HỌC TẬP
+            // LUỒNG 3: [ĐÃ FIX] XỬ LÝ TẢI LÊN TÀI LIỆU (KHỚP THE_BUNNY_DB.SQL)
             // -------------------------------------------------------------------------
             case 'add_document':
                 $doc_name = sanitize_input($_POST['ten_tai_lieu'] ?? 'Tài liệu vô danh');
-                // Gán tĩnh phần định dạng và dung lượng do chưa tích hợp $_FILES
-                $loai_file  = "PDF"; 
-                $kich_thuoc = 2048; 
                 
+                // Do form tải file chưa tích hợp hệ thống lưu trữ tệp tin vật lý, 
+                // ta sẽ gán một chuỗi URL giả lập vào CSDL.
+                $file_url = "uploads/docs/dinh_kem_hoc_tap.pdf"; 
+                
+                // [GIẢI THÍCH SQL]: Bảng tai_lieu theo schema thực tế chỉ có 
+                // id, user_id, ten_tai_lieu, file_url, created_at, updated_at
                 $sql_insert_doc = "
                     INSERT INTO tai_lieu 
-                        (user_id, ten_tai_lieu, loai_file, kich_thuoc, luot_tai, created_at) 
+                        (user_id, ten_tai_lieu, file_url, created_at) 
                     VALUES 
-                        (:uid, :name, :type, :size, 0, NOW())
+                        (:uid, :name, :url, NOW())
                 ";
                 $stmt = $pdo->prepare($sql_insert_doc);
                 $stmt->execute([
                     'uid'  => $current_user_id, 
                     'name' => $doc_name, 
-                    'type' => $loai_file, 
-                    'size' => $kich_thuoc
+                    'url'  => $file_url
                 ]);
                 
                 $message_notify = "Đóng góp tài liệu học tập thành công!";
@@ -271,37 +270,40 @@ try {
                 break;
 
             // -------------------------------------------------------------------------
-            // LUỒNG 4: XỬ LÝ TẠO SỰ KIỆN LỊCH TRÌNH VÀ PHÂN QUYỀN THÀNH VIÊN
+            // LUỒNG 4: [ĐÃ FIX] XỬ LÝ TẠO SỰ KIỆN LỊCH TRÌNH (SỬA LỖI HY093)
             // -------------------------------------------------------------------------
             case 'add_event':
-                $event_name = sanitize_input($_POST['ten_su_kien'] ?? 'Sự kiện The Bunny');
-                $event_date = !empty($_POST['ngay_su_kien']) ? $_POST['ngay_su_kien'] : date('Y-m-d H:i:s');
-                $event_loc  = sanitize_input($_POST['dia_diem'] ?? '');
+                $event_name = sanitize_input($_POST['tieu_de'] ?? 'Sự kiện The Bunny');
+                // Lấy thời gian từ Form, đảm bảo là chuỗi không rỗng
+                $event_date = !empty($_POST['thoi_gian']) ? $_POST['thoi_gian'] : date('Y-m-d H:i:s');
                 
-                // [BƯỚC 1]: Thêm dữ liệu vào bảng su_kien (Không chèn user_id ở đây)
+                // [BƯỚC 1]: Thêm dữ liệu vào bảng su_kien.
+                // CHÚ Ý: Bảng su_kien theo CSDL thực tế không có cột nguoi_tao_id và dia_diem.
                 $sql_insert_event = "
                     INSERT INTO su_kien 
                         (tieu_de, thoi_gian, created_at) 
                     VALUES 
-                        (:name, :date, NOW())
+                        (:title, :time, NOW())
                 ";
                 $stmt = $pdo->prepare($sql_insert_event);
+                
+                // [GIẢI THÍCH FIX LỖI HY093]: Key trong mảng execute phải KHỚP TUYỆT ĐỐI 
+                // với tên placeholder trong câu SQL (:title -> 'title', :time -> 'time').
                 $stmt->execute([
-                    'name' => $event_name, 
-                    'date' => $event_date, 
-                    'loc'  => $event_loc
+                    'title' => $event_name, 
+                    'time'  => $event_date
                 ]);
                 
-                // [BƯỚC 2]: Lấy ID của sự kiện vừa được chèn thành công vào CSDL
-                // PDO hỗ trợ hàm lastInsertId() cực kỳ tiện lợi cho các bảng có Khóa chính AUTO_INCREMENT
+                // [BƯỚC 2]: Lấy ID của sự kiện vừa được chèn thành công để liên kết Khóa Ngoại
                 $new_event_id = $pdo->lastInsertId();
                 
-                // [BƯỚC 3]: Chèn user hiện tại vào bảng thanh_vien_su_kien và gán quyền Host/Admin
+                // [BƯỚC 3]: Đăng ký User này vào bảng trung gian thanh_vien_su_kien với tư cách Approved
+                // Do user là người tạo nên trạng thái duyệt auto là Approved.
                 $sql_insert_member = "
                     INSERT INTO thanh_vien_su_kien 
-                        (su_kien_id, user_id, vai_tro, joined_at) 
+                        (su_kien_id, user_id, trang_thai_duyet, created_at) 
                     VALUES 
-                        (:event_id, :uid, 'Quan_tri_vien', NOW())
+                        (:event_id, :uid, 'Approved', NOW())
                 ";
                 $stmt_member = $pdo->prepare($sql_insert_member);
                 $stmt_member->execute([
@@ -312,6 +314,10 @@ try {
                 $message_notify = "Lên lịch sự kiện học thuật thành công!";
                 $message_type   = "success";
                 break;
+                
+            default:
+                throw new Exception("Hành động không được nhận diện bởi hệ thống bảo mật.");
+        }
         
         // [GIẢI THÍCH PHP]: Kỹ thuật PRG (Post/Redirect/Get)
         // Nếu có thông báo thành công, ta mã hóa url và chuyển hướng trang.
@@ -329,7 +335,7 @@ try {
 
 } catch (Exception $e) {
     // Bắt lỗi phát sinh trong quá trình thực thi POST
-    $message_notify = "Lỗi xử lý yêu cầu: " . $e->getMessage();
+    $message_notify = "Lỗi xử lý hệ thống: " . $e->getMessage();
     $message_type   = "danger"; // Báo màu đỏ cho giao diện Bootstrap
 }
 
@@ -345,7 +351,7 @@ if (isset($_GET['msg']) && isset($_GET['type'])) {
 
 try {
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 1]: LẤY DỮ LIỆU ĐỊNH DANH VÀ THỐNG KÊ (BẢNG USERS VÀ HO_SO_CA_NHAN)
+    // [TRUY VẤN 1]: LẤY DỮ LIỆU ĐỊNH DANH VÀ THỐNG KÊ TỔNG QUAN
     // ---------------------------------------------------------------------------------
     $sql_profile = "
         SELECT 
@@ -439,13 +445,14 @@ try {
     $buddies_data = $stmt_buddies->fetchAll();
 
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 4]: LẤY DANH SÁCH KHO TÀI LIỆU SỐ
+    // [TRUY VẤN 4]: [ĐÃ FIX] LẤY DANH SÁCH KHO TÀI LIỆU SỐ
     // ---------------------------------------------------------------------------------
+    // Sửa lại tên cột file_ thành file_url theo đúng schema trong the_bunny_db.sql
     $sql_docs = "
         SELECT 
             id, 
             ten_tai_lieu, 
-            file_, 
+            file_url, 
             created_at 
         FROM 
             tai_lieu 
@@ -459,11 +466,9 @@ try {
     $docs_data = $stmt_docs->fetchAll();
 
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 5]: LẤY DANH SÁCH SỰ KIỆN HỌC THUẬT QUẢN LÝ QUA BẢNG TRUNG GIAN
+    // [TRUY VẤN 5]: [ĐÃ FIX] LẤY DANH SÁCH SỰ KIỆN QUA BẢNG TRUNG GIAN
     // ---------------------------------------------------------------------------------
-    // [GIẢI THÍCH SQL]: Thay vì tìm 'nguoi_tao_id', ta dùng INNER JOIN nối bảng 'su_kien' (sk)
-    // với bảng 'thanh_vien_su_kien' (tv). Điều kiện lọc (WHERE) sẽ dò xem user hiện tại
-    // có tồn tại trong bảng thành viên của sự kiện đó hay không.
+    // [GIẢI THÍCH SQL]: Dùng INNER JOIN nối bảng 'su_kien' (sk) với 'thanh_vien_su_kien' (tv).
     $sql_events = "
         SELECT 
             sk.id, 
@@ -486,7 +491,7 @@ try {
     $events_data = $stmt_events->fetchAll();
 
 } catch (PDOException $e) { 
-    // Bắt lỗi ngoại lệ ở tầng SELECT dữ liệu
+    // Bắt lỗi ngoại lệ ở tầng SELECT dữ liệu nếu có
     $message_notify = "Lỗi kỹ thuật trong quá trình truy xuất thông tin hệ thống: " . $e->getMessage();
     $message_type = "danger";
 }
@@ -511,9 +516,10 @@ try {
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="../assets/js/trang-ca-nhan.js" defer></script>
+    
     <script defer>
-        // Lệnh kích hoạt hiệu ứng Tooltip của Bootstrap sau khi DOM sẵn sàng
         document.addEventListener('DOMContentLoaded', function () {
+            // Khởi tạo Tooltip (Nhãn dán nổi)
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
@@ -531,7 +537,7 @@ try {
             aria-live="assertive"
         >
             <i class="fa-solid fa-circle-info me-2"></i>
-            <strong>Hệ thống:</strong> <?= htmlspecialchars($message_notify); ?>
+            <strong>Thông báo hệ thống:</strong> <?= htmlspecialchars($message_notify); ?>
             
             <button 
                 type="button" 
@@ -598,7 +604,7 @@ try {
             
             <div class="card-body position-relative pt-0 px-md-5 pb-5">
                 
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-end text-center text-md-start" style="margin-top: -80px; z-index: 2;">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-center align-items-md-end text-center text-md-start" style="margin-top: -50px; z-index: 2;">
                     
                     <div class="d-flex flex-column flex-md-row align-items-center align-items-md-end gap-4">
                         
@@ -614,7 +620,7 @@ try {
                             <span class="position-absolute bottom-0 end-0 p-2 mb-2 me-3 bg-success border border-3 border-white rounded-circle" aria-label="Đang trực tuyến"></span>
                         </div>
                         
-                        <div class="pb-3 mt-3 mt-md-0">
+                        <div class="pb-3 mt-4 mt-md-4 pt-md-3">
                             <h1 class="fw-bold m-0 text-dark mb-1" style="font-size: 2rem;">
                                 <?= htmlspecialchars($user_name); ?>
                                 
@@ -800,9 +806,7 @@ try {
                             <div class="card-body p-4">
                                 
                                 <form method="POST" action="">
-                                    
                                     <input type="hidden" name="action" value="add_post">
-                                    
                                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
                                     
                                     <div class="d-flex gap-3">
@@ -836,17 +840,17 @@ try {
                                     </div>
                                 </form>
                             </div>
-                        </div> <?php if (count($posts_data) > 0): ?>
+                        </div>
+
+                        <?php if (count($posts_data) > 0): ?>
                             
                             <?php foreach ($posts_data as $post): ?>
-                            
                             <article class="card shadow-sm border-0 mb-4 rounded-4 bg-white overflow-hidden">
                                 <div class="card-body p-4">
                                     
                                     <header class="d-flex align-items-center justify-content-between mb-3">
                                         <div class="d-flex align-items-center gap-3">
-                                            
-                                            <img src="assets/images/default-avatar.png" class="rounded-circle border shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Tác giả">
+                                            <img src="../assets/img/default-avatar.jpg" class="rounded-circle border shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Tác giả">
                                             
                                             <div>
                                                 <h6 class="m-0 fw-bold text-dark fs-5 d-flex align-items-center gap-2">
@@ -880,23 +884,18 @@ try {
                                 
                                 <footer class="card-footer bg-light border-top border-light py-2 px-4">
                                     <div class="d-flex justify-content-between gap-2">
-                                        
                                         <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
                                             <i class="fa-regular fa-thumbs-up fs-5 me-2"></i> Thích
                                         </button>
-                                        
                                         <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
                                             <i class="fa-regular fa-comment fs-5 me-2"></i> Bình luận
                                         </button>
-                                        
                                         <button class="btn btn-light flex-fill fw-bold text-secondary border-0 py-2 rounded-3 hover-bg-gray transition">
                                             <i class="fa-solid fa-share fs-5 me-2"></i> Chia sẻ
                                         </button>
-                                        
                                     </div>
                                 </footer>
                             </article>
-                            
                             <?php endforeach; ?>
                             
                         <?php else: ?>
@@ -924,7 +923,6 @@ try {
                         <h3 class="fw-bold mb-4 border-bottom pb-4 text-primary"><i class="fa-solid fa-address-card me-3"></i>Hồ sơ Định danh Toàn diện</h3>
                         
                         <div class="row g-5">
-                            
                             <div class="col-md-6">
                                 <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-server text-secondary me-2"></i> Dữ liệu Hệ thống</h5>
                                 
@@ -955,8 +953,9 @@ try {
                                     </p>
                                 </div>
                             </div>
-                            
-                        </div> </div>
+                        </div> 
+                        
+                    </div>
                 </div>
             </div> <div 
                 class="tab-pane fade" 
@@ -970,7 +969,6 @@ try {
                         
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
                             <h3 class="fw-bold m-0 text-dark"><i class="fa-solid fa-box-archive text-warning me-3"></i>Thư viện Học liệu số</h3>
-                            
                             <button 
                                 class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
                                 data-bs-toggle="modal" 
@@ -985,7 +983,6 @@ try {
                             <?php if (count($docs_data) > 0): ?>
                                 <?php foreach ($docs_data as $doc): ?>
                                 <div class="col">
-                                    
                                     <div class="border rounded-4 p-4 d-flex align-items-center justify-content-between bg-white shadow-sm h-100 border-start border-4 border-danger hover-transform transition">
                                         
                                         <div class="d-flex align-items-center gap-4 overflow-hidden">
@@ -997,15 +994,14 @@ try {
                                                 <h5 class="m-0 fw-bold text-dark text-truncate mb-2" style="max-width: 250px;" title="<?= htmlspecialchars($doc['ten_tai_lieu']); ?>">
                                                     <?= htmlspecialchars($doc['ten_tai_lieu']); ?>
                                                 </h5>
+                                                
                                                 <small class="text-muted fw-bold fs-6">
-                                                    <?= htmlspecialchars($doc['kich_thuoc']); ?> KB 
-                                                    <span class="mx-2 text-light-gray">•</span> 
-                                                    <i class="fa-solid fa-cloud-arrow-down text-primary"></i> <?= (int)$doc['luot_tai']; ?> Lượt lưu
+                                                    Tải lên: <?= date('d/m/Y', strtotime($doc['created_at'])); ?>
                                                 </small>
                                             </div>
                                         </div>
                                         
-                                        <a href="#" class="btn btn-outline-primary rounded-circle shadow-sm ms-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;" aria-label="Tải file này">
+                                        <a href="<?= htmlspecialchars($doc['file_url']); ?>" target="_blank" class="btn btn-outline-primary rounded-circle shadow-sm ms-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;" aria-label="Tải file này">
                                             <i class="fa-solid fa-download fs-5"></i>
                                         </a>
                                         
@@ -1051,33 +1047,27 @@ try {
                                 <?php foreach ($events_data as $event): ?>
                                 <div class="col">
                                     <div class="card h-100 border-0 shadow-sm bg-primary bg-opacity-10 rounded-4 overflow-hidden position-relative hover-lift transition">
-                                        
                                         <div class="bg-primary w-100" style="height: 6px;"></div>
-                                        
                                         <div class="card-body p-4">
                                             <div class="d-flex align-items-center gap-3 mb-4">
                                                 
                                                 <div class="bg-primary text-white text-center rounded-3 p-3 shadow-sm" style="min-width: 75px;">
-                                                    <span class="d-block fw-bold fs-2 lh-1"><?= date('d', strtotime($event['thoi_gian_bat_dau'])); ?></span>
-                                                    <span class="d-block small text-uppercase fw-bold opacity-75 mt-1">Tháng <?= date('m', strtotime($event['thoi_gian_bat_dau'])); ?></span>
+                                                    <span class="d-block fw-bold fs-2 lh-1"><?= date('d', strtotime($event['thoi_gian'])); ?></span>
+                                                    <span class="d-block small text-uppercase fw-bold opacity-75 mt-1">Tháng <?= date('m', strtotime($event['thoi_gian'])); ?></span>
                                                 </div>
                                                 
-                                                <h5 class="fw-bold text-dark m-0 lh-base"><?= htmlspecialchars($event['ten_su_kien']); ?></h5>
+                                                <h5 class="fw-bold text-dark m-0 lh-base"><?= htmlspecialchars($event['tieu_de']); ?></h5>
                                                 
                                             </div>
                                             
-                                            <div class="bg-white bg-opacity-50 p-3 rounded-3 mb-3">
+                                            <div class="bg-white bg-opacity-50 p-3 rounded-3 mb-3 text-center">
                                                 <p class="text-dark fw-bold mb-2 fs-6">
                                                     <i class="fa-regular fa-clock w-20px text-primary text-center me-2"></i> 
-                                                    <?= date('H:i A', strtotime($event['thoi_gian_bat_dau'])); ?>
-                                                </p>
-                                                <p class="text-dark fw-bold m-0 fs-6">
-                                                    <i class="fa-solid fa-location-dot w-20px text-danger text-center me-2"></i> 
-                                                    <?= htmlspecialchars($event['dia_diem']); ?>
+                                                    Khởi chiếu: <?= date('H:i A', strtotime($event['thoi_gian'])); ?>
                                                 </p>
                                             </div>
                                             
-                                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill">Đăng ký tham gia</button>
+                                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill">Đã ghi danh tham dự</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1112,13 +1102,12 @@ try {
                         </h3>
                         
                         <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-                            
                             <?php if (count($buddies_data) > 0): ?>
                                 <?php foreach ($buddies_data as $buddy): ?>
                                 <div class="col">
                                     <div class="border border-light rounded-4 p-4 d-flex flex-column align-items-center text-center bg-white shadow-sm h-100 hover-border-primary transition">
                                         
-                                        <img src="assets/images/default-avatar.png" class="rounded-circle border border-3 border-light shadow-sm mb-3" width="90" height="90" style="object-fit: cover;" alt="Bạn bè">
+                                        <img src="../assets/img/default-avatar.jpg" class="rounded-circle border border-3 border-light shadow-sm mb-3" width="90" height="90" style="object-fit: cover;" alt="Bạn bè">
                                         
                                         <div class="flex-grow-1 w-100 mb-3">
                                             <h5 class="fw-bold m-0 text-dark text-truncate px-2 mb-2" title="<?= htmlspecialchars($buddy['username']); ?>">
@@ -1249,14 +1238,17 @@ try {
                             </div>
                             
                         </div>
-                    </div> <div class="modal-footer bg-light border-top-0 py-4 px-5 rounded-bottom-4 justify-content-between">
+                    </div> 
+                    
+                    <div class="modal-footer bg-light border-top-0 py-4 px-5 rounded-bottom-4 justify-content-between">
                         <small class="text-muted fw-medium"><i class="fa-solid fa-lock text-success"></i> Bảo mật bởi PDO MySQL</small>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm border" data-bs-dismiss="modal">Hủy tác vụ</button>
                             <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-pill shadow-sm">Đồng bộ Dữ liệu CSDL</button>
                         </div>
                     </div>
-                </div> </form>
+                </div> 
+            </form>
         </div>
     </div>
 
@@ -1290,7 +1282,7 @@ try {
                                 type="text" 
                                 class="form-control form-control-lg border-secondary-subtle fw-medium fs-6 rounded-3" 
                                 name="ten_tai_lieu" 
-                                placeholder="Ghi rõ bộ môn và chuyên đề. VD: Vật Lý 9 - Cấu tạo thấu kính hội tụ..." 
+                                placeholder="Ghi rõ bộ môn và chuyên đề. VD: Vật Lý 9 - Thấu kính hội tụ..." 
                                 required
                             >
                         </div>
@@ -1302,7 +1294,7 @@ try {
                             
                             <div class="alert alert-warning border-0 mt-4 text-start mb-0 small">
                                 <i class="fa-solid fa-triangle-exclamation text-danger fw-bold me-1"></i> <strong>Chế độ Safe Mode:</strong> 
-                                Để bảo vệ CSDL khỏi file chứa mã độc, luồng Upload tệp tin gốc đang tạm khóa. Nhấn nút Tải lên để kích hoạt luồng <code>INSERT MOCK (Dữ liệu tĩnh)</code> ghi thẳng vào DB bảng <code>tai_lieu</code>.
+                                Để bảo vệ CSDL khỏi file chứa mã độc, luồng Upload tệp tin gốc đang tạm khóa. Hệ thống sẽ tự động gán đường dẫn giả lập vào CSDL.
                             </div>
                         </div>
                     </div>
@@ -1345,7 +1337,7 @@ try {
                             <input 
                                 type="text" 
                                 class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-3" 
-                                name="ten_su_kien" 
+                                name="tieu_de" 
                                 placeholder="Ghi rõ tên khóa học / sự kiện..." 
                                 required
                             >
@@ -1358,21 +1350,7 @@ try {
                                 <input 
                                     type="datetime-local" 
                                     class="form-control border-secondary-subtle py-2 px-3 fw-medium" 
-                                    name="ngay_su_kien" 
-                                    required
-                                >
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-bold text-dark fs-6">Nền tảng / Máy chủ Liên kết (Google Meet/Zoom) <span class="text-danger">*</span></label>
-                            <div class="input-group shadow-sm">
-                                <span class="input-group-text bg-danger text-white border-danger"><i class="fa-solid fa-video"></i></span>
-                                <input 
-                                    type="text" 
-                                    class="form-control border-secondary-subtle py-2 px-3 fw-medium" 
-                                    name="dia_diem" 
-                                    placeholder="Dán link phòng họp ảo (URL) hoặc ghi vị trí vật lý..." 
+                                    name="thoi_gian" 
                                     required
                                 >
                             </div>
@@ -1381,7 +1359,7 @@ try {
                     </div>
                     
                     <div class="modal-footer border-top-0 py-4 px-4 bg-light justify-content-between">
-                        <small class="text-muted fw-bold"><i class="fa-solid fa-bell text-warning"></i> Sự kiện sẽ phát thông báo toàn máy chủ</small>
+                        <small class="text-muted fw-bold"><i class="fa-solid fa-bell text-warning"></i> Bạn sẽ làm Quản trị viên (Host) sự kiện này.</small>
                         <div class="d-flex gap-2">
                             <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Trở về</button>
                             <button type="submit" class="btn btn-warning fw-bold px-5 py-2 rounded-pill shadow-sm text-dark">Phát hành Lịch</button>
