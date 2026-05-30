@@ -1,6 +1,6 @@
 <?php
 // Gọi tệp config.php (Lùi ra 2 cấp thư mục: từ auth -> pages -> gốc)
-require_once '../../config/config.php';
+require_once '../config/config.php';
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
@@ -32,10 +32,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username']  = $user['username'];
             $_SESSION['user_type']    = $user['user_type'];
-            if ($user['role'] === 'admin') {
-                header("Location: ../admin.php");
+            if ($user['user_type'] === 'quan_tri_vien') {
+                header("Location: ../pages/admin.php");
             } else {
-                header("Location: ../trang-chu.php"); 
+                header("Location: ../pages/trang-chu.php"); 
             }
             exit();
         } else {
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $conn->close();
 } else {
     // Chặn ai đó cố tình gõ đường dẫn login_action.php lên URL
-    header("Location: ../../index.php");
+    header("Location: ../index.php");
     exit();
 }
 ?>

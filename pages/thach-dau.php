@@ -92,9 +92,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phòng Practice - The Bunny</title>
     
-    <link rel="stylesheet" href="../assets/css/root.css">
-    <link rel="stylesheet" href="../assets/css/thach_dau.css">
-    <script defer src="../assets/js/thach_dau.js"></script>
+    <link href="../assets/css/root.css" rel="stylesheet">
+    <link href="../assets/css/thach-dau.css" rel="stylesheet">
+    <script src="../assets/js/thach-dau.js"></script>
     
 </head>
 <body>
