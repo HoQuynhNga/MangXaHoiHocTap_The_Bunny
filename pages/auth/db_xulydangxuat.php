@@ -20,6 +20,18 @@ if (isset($_COOKIE['remember_token'])) {
 }
 
 // 5. Hủy diệt hoàn toàn phiên làm việc trên máy chủ (Server)
+if(isset($_SESSION['user_id']))
+{
+    $updateOffline = $pdo->prepare("
+        UPDATE users
+        SET is_online = 0
+        WHERE id = :id
+    ");
+
+    $updateOffline->execute([
+        'id' => $_SESSION['user_id']
+    ]);
+}
 session_destroy();
 
 // 6. Điều hướng người dùng bay ra ngoài trang Đăng nhập (Lùi ra 2 cấp thư mục)

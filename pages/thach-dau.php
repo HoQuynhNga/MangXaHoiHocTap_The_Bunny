@@ -18,8 +18,7 @@ $user_avatar = "https://i.pravatar.cc/150?img=12";
 
 $stats_fire = 15;
 
-$current_user_id = 1;
-
+$current_user_id = $_SESSION['user_id'] ?? 1;
 // =====================================================================================
 // PHẦN 2: KẾT NỐI DATABASE
 // =====================================================================================
@@ -45,34 +44,64 @@ try {
 // PHẦN 3: LẤY THÔNG TIN USER
 // =====================================================================================
 
-try {
+$onlineUsers = [];
 
-    $sql_query = "
-        SELECT 
+try
+{
+    // ====================================================
+    // LẤY USER HIỆN TẠI
+    // ====================================================
+
+    $sqlUser = "
+        SELECT
             username
         FROM users
         WHERE id = :id
     ";
 
-    $stmt = $pdo->prepare($sql_query);
+    $stmt = $pdo->prepare($sqlUser);
 
     $stmt->execute([
         'id' => $current_user_id
     ]);
 
-    if ($row = $stmt->fetch()) {
-
+    if ($row = $stmt->fetch())
+    {
         $user_name = $row['username'] ?? $user_name;
 
-        // Avatar mặc định vì DB chưa có cột avatar
-        $user_avatar = "https://i.pravatar.cc/150?img=12";
+
     }
 
-} catch (PDOException $e) {
+    // ====================================================
+    // LẤY DANH SÁCH USER ONLINE
+    // ====================================================
 
+    $sqlOnline = "
+        SELECT
+            id,
+            username,
+            avatar
+        FROM users
+        WHERE is_online = 1
+        AND id != :current_user
+    ";
+
+    $stmtOnline = $pdo->prepare($sqlOnline);
+
+    $stmtOnline->execute([
+        'current_user' => $current_user_id
+    ]);
+
+    $onlineUsers = $stmtOnline->fetchAll();
+
+}
+catch(PDOException $e)
+{
     echo "Lỗi truy vấn user: " . $e->getMessage();
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -346,16 +375,49 @@ try {
                         <input type="text" class="form-control bg-light border-0" placeholder="Tìm kiếm tên bạn bè...">
                     </div>
                     <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        <?php if(count($onlineUsers) > 0): ?>
+
+                    <?php foreach($onlineUsers as $user): ?>
+
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0">
+
                             <div class="d-flex align-items-center gap-3">
-                                <img src="https://i.pravatar.cc/150?img=9" class="rounded-circle" width="40">
+
+                                <img src="https://i.pravatar.cc/150?img=9"
+                                    class="rounded-circle"
+                                    width="40">
+
                                 <div>
-                                    <h6 class="m-0 fw-bold">Hoàng Oanh</h6>
-                                    <small class="text-success"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Đang online</small>
+                                    <h6 class="m-0 fw-bold">
+                                        <?= htmlspecialchars($user['username']) ?>
+                                    </h6>
+
+                                    <small class="text-success">
+                                        <i class="fa-solid fa-circle"
+                                        style="font-size:8px;"></i>
+                                        Đang online
+                                    </small>
                                 </div>
+
                             </div>
-                            <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3">Mời</button>
+
+                            <button
+                                class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3"
+                                onclick="inviteUser(<?= $user['id'] ?>)">
+                                Mời
+                            </button>
+
                         </div>
+
+                    <?php endforeach; ?>
+
+                <?php else: ?>
+
+                    <div class="text-center p-4 text-muted">
+                        Không có người dùng nào đang online
+                    </div>
+
+                <?php endif; ?>
                     </div>
                 </div>
             </div>

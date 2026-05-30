@@ -11,3 +11,7 @@ function startBattle() {
     document.getElementById('toastMessage').innerHTML = '<i class="fa-solid fa-paper-plane text-warning me-2"></i> Lời thách đấu đã được gửi đi!';
     new bootstrap.Toast(document.getElementById('systemToast')).show();
 }
+function inviteUser(userId)
+{
+    alert("Đã gửi lời mời tới user ID: " + userId);
+}
