@@ -131,7 +131,7 @@ try {
             <a href="#"><i class="fa-solid fa-gear me-2"></i> Cài đặt Hệ thống</a>
             
             <div class="mt-5">
-                <a href="pages/auth/logout.php" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a>
+                <a href="../models/db_xulydangxuat.php" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Đăng xuất</a>
             </div>
         </div>
 

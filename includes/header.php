@@ -16,6 +16,9 @@
             <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
                 <i class="fa-solid fa-khanda fa-2x"></i>
             </a>
+            <a href="hang-tho.php" class="btn-icon text-decoration-none" title="Thông báo">
+            <i class="fa-solid fa-people-group fa-2x"></i>
+            </a>
             
             <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
                 <i class="fa-brands fa-facebook-messenger fa-2x"></i>
