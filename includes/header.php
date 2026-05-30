@@ -24,7 +24,7 @@
                 <i class="fa-brands fa-facebook-messenger fa-2x"></i>
             </a>
             
-            <a href="notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
+            <a href="thong-bao.php" class="btn-icon text-decoration-none" title="Thông báo">
                 <i class="fa-solid fa-bell fa-2x"></i>
             </a>
             
