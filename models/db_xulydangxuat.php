@@ -23,6 +23,6 @@ if (isset($_COOKIE['remember_token'])) {
 session_destroy();
 
 // 6. Điều hướng người dùng bay ra ngoài trang Đăng nhập (Lùi ra 2 cấp thư mục)
-header("Location: ../../index.php");
+header("Location: ../index.php");
 exit();
 ?>
