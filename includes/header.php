@@ -10,17 +10,17 @@
             </div>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-5">
             <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
-                <i class="fa-solid fa-khanda"></i>
+                <i class="fa-solid fa-khanda fa-2x"></i>
             </a>
             
             <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
-                <i class="fa-brands fa-facebook-messenger"></i>
+                <i class="fa-brands fa-facebook-messenger fa-2x"></i>
             </a>
             
             <a href="notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
-                <i class="fa-solid fa-bell"></i>
+                <i class="fa-solid fa-bell fa-2x"></i>
             </a>
             
             <!-- streak_days: users.streak_days -->
@@ -28,14 +28,6 @@
                 <i class="fa-solid fa-fire text-danger"></i>
                 <span class="fw-bold fs-6"><?= htmlspecialchars($stats_xp) ?></span>
             </div>
-            
-            <!-- Avatar người dùng: users.avatar_url, users.full_name -->
-            <a href="<?= htmlspecialchars($user_avatar) ?>">
-                <img src="<?= htmlspecialchars($user_avatar) ?>"
-                     class="rounded-circle border cursor-pointer"
-                     width="40" height="40"
-                     alt="<?= htmlspecialchars($user_name) ?>">
-            </a>
             <div class="d-flex align-items-center gap-2 border-start ps-3 ms-1">
                 <a href="trang-ca-nhan.php" title="Vào trang cá nhân">
                     <img src="<?= $user_avatar ?>" alt="Avatar" class="rounded-circle border border-2" width="40" height="40">

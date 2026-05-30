@@ -19,7 +19,7 @@ session_start();
 require_once '../config/config.php'; 
 
 // =========================================================================================
-// PHẦN 1: ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH (HELPER FUNCTIONS) XỬ LÝ NGHIỆP VỤ & BẢO MẬT
+// PHẦN 1: ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH XỬ LÝ NGHIỆP VỤ & BẢO MẬT
 // =========================================================================================
 
 /**
@@ -63,7 +63,7 @@ function remove_vietnamese_accents($str) {
 }
 
 /**
- * Hàm tính thời gian tương đối (Time Ago) như Facebook
+ * Hàm tính thời gian tương đối
  * [GIẢI THÍCH PHP]: Nhận vào chuỗi DATETIME từ DB, so sánh với giờ hiện tại của máy chủ,
  * và quy đổi ra định dạng "Vừa xong", "5 phút trước", "2 giờ trước"...
  */
@@ -98,7 +98,7 @@ function time_elapsed_string($datetime, $full = false) {
 }
 
 /**
- * TẠO CSRF TOKEN CHỐNG GIẢ MẠO REQUEST (Cross-Site Request Forgery)
+ * TẠO CSRF TOKEN CHỐNG GIẢ MẠO REQUEST
  * [GIẢI THÍCH PHP]: Tạo một mã băm ngẫu nhiên 32 byte lưu vào phiên làm việc (Session).
  * Token này sẽ được chèn ẩn vào mọi Form. Nếu hacker giả mạo Form từ trang khác gửi đến,
  * do không có Token khớp với Session, request sẽ bị chặn lại lập tức.
@@ -109,7 +109,7 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 // =====================================================================================
-// PHẦN 2: KHỞI TẠO BIẾN TRỐNG (MẶC ĐỊNH AN TOÀN - KHÔNG DÙNG DỮ LIỆU MẪU)
+// PHẦN 2: KHỞI TẠO BIẾN TRỐNG
 // =====================================================================================
 
 $page_title          = "Trang cá nhân";
@@ -124,7 +124,7 @@ $is_verified         = false; // Cờ kiểm tra tài khoản đã xác thực c
 // Biến thông tin mở rộng từ bảng `ho_so_ca_nhan`
 $thong_tin_dinh_danh = "";
 
-// Do CSDL thiết kế không có cột upload ảnh, ta gán ảnh dự phòng (Fallback Image)
+// Do CSDL chưa thiết kế không có cột upload ảnh, ta gán ảnh dự phòng (Fallback Image)
 $user_avatar         = "../assets/img/default-avatar.jpg";
 $user_cover          = "../assets/img/default-cover.jpg";
 
@@ -178,12 +178,15 @@ try {
 // PHẦN 4: TIẾP NHẬN YÊU CẦU POST VÀ THỰC THI (ĐĂNG BÀI, THÊM XÓA SỬA VÀ TƯƠNG TÁC)
 // =====================================================================================
 
+// =====================================================================================
+// PHẦN 4: TIẾP NHẬN YÊU CẦU POST VÀ THỰC THI (ĐĂNG BÀI, THÊM XÓA SỬA VÀ TƯƠNG TÁC)
+// =====================================================================================
+
 try {
     // Kiểm tra xem luồng chạy có phải là thao tác đẩy dữ liệu (POST) không
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action'])) {
         
         // [KIỂM TRA BẢO MẬT]: Xác thực CSRF Token
-        // Hàm hash_equals dùng để so sánh chuỗi an toàn, chống tấn công timing attack.
         if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
             throw new Exception("Lỗi bảo mật: CSRF Token không hợp lệ hoặc đã hết hạn. Vui lòng tải lại trang.");
         }
@@ -191,81 +194,12 @@ try {
         // Trích xuất biến action để xem người dùng đang ấn nút nào
         $action = sanitize_input($_POST['action']);
 
-        // [TÍNH NĂNG MỚI]: Xử lý Logic Tương Tác Mạng Xã Hội (Like, Comment, Share)
-        // -----------------------------------------------------------------------------
-        
-        // ---> LUỒNG TƯƠNG TÁC 1: NHẤN NÚT THÍCH (LIKE / UNLIKE) <---
-        if ($action == 'like_post') {
-            // Lấy ID bài đăng từ form ẩn
-            $post_id = (int)$_POST['post_id'];
-            
-            // Bước 1: Kiểm tra xem user này đã like bài này chưa
-            $check_like = $pdo->prepare("SELECT id FROM luot_thich WHERE bai_dang_id = :pid AND user_id = :uid");
-            $check_like->execute(['pid' => $post_id, 'uid' => $current_user_id]);
-            
-            if ($check_like->rowCount() > 0) {
-                // Đã like rồi -> Bấm lần nữa là UNLIKE (Xóa bản ghi)
-                $del_like = $pdo->prepare("DELETE FROM luot_thich WHERE bai_dang_id = :pid AND user_id = :uid");
-                $del_like->execute(['pid' => $post_id, 'uid' => $current_user_id]);
-                $message_notify = "Đã bỏ thích bài viết.";
-            } else {
-                // Chưa like -> Tiến hành LIKE (Thêm bản ghi)
-                $ins_like = $pdo->prepare("INSERT INTO luot_thich (bai_dang_id, user_id, created_at) VALUES (:pid, :uid, NOW())");
-                $ins_like->execute(['pid' => $post_id, 'uid' => $current_user_id]);
-                $message_notify = "Đã thích bài viết thành công!";
-            }
-            $message_type = "success";
-        }
-        
-        // ---> LUỒNG TƯƠNG TÁC 2: GỬI BÌNH LUẬN (COMMENT) <---
-        elseif ($action == 'comment_post') {
-            $post_id = (int)$_POST['post_id'];
-            $comment_content = sanitize_input($_POST['noi_dung_binh_luan']);
-            
-            if (!empty($comment_content)) {
-                // Insert thẳng dữ liệu vào bảng binh_luan
-                $ins_cmt = $pdo->prepare("INSERT INTO binh_luan (bai_dang_id, user_id, noi_dung, created_at) VALUES (:pid, :uid, :content, NOW())");
-                $ins_cmt->execute([
-                    'pid'     => $post_id, 
-                    'uid'     => $current_user_id, 
-                    'content' => $comment_content
-                ]);
-                $message_notify = "Đã gửi bình luận của bạn lên hệ thống!";
-                $message_type = "success";
-            } else {
-                throw new Exception("Nội dung bình luận không được để trống.");
-            }
-        }
-        
-        // ---> LUỒNG TƯƠNG TÁC 3: CHIA SẺ BÀI VIẾT (SHARE) <---
-        elseif ($action == 'share_post') {
-            $post_id = (int)$_POST['post_id'];
-            
-            // Insert dữ liệu vào bảng luot_chia_se
-            $ins_share = $pdo->prepare("INSERT INTO luot_chia_se (bai_dang_id, user_id, created_at) VALUES (:pid, :uid, NOW())");
-            $ins_share->execute(['pid' => $post_id, 'uid' => $current_user_id]);
-            
-            $message_notify = "Đã chia sẻ bài viết thành công!";
-            $message_type = "success";
-        }
+        // Mảng chứa các action thuộc về Bài Đăng
+        $post_actions = ['like_post', 'comment_post', 'share_post', 'add_post'];
 
-        // -----------------------------------------------------------------------------
-        // CÁC LUỒNG XỬ LÝ DỮ LIỆU CỐT LÕI CŨ (ĐĂNG BÀI, SỬA HỒ SƠ, UPLOAD FILE)
-        // -----------------------------------------------------------------------------
-        
-        // LUỒNG: ĐĂNG BÀI VIẾT MỚI LÊN TƯỜNG (DÒNG THỜI GIAN)
-        elseif ($action == 'add_post') {
-            if (!empty(trim($_POST['noidung_post']))) {
-                $content = sanitize_input($_POST['noidung_post']);
-                // Ghi dữ liệu văn bản vào bảng bai_dang
-                $sql_insert_post = "INSERT INTO bai_dang (user_id, noi_dung, created_at) VALUES (:uid, :content, NOW())";
-                $stmt = $pdo->prepare($sql_insert_post);
-                $stmt->execute(['uid' => $current_user_id, 'content' => $content]);
-                $message_notify = "Đã xuất bản bài đăng lên dòng thời gian!";
-                $message_type   = "success";
-            } else {
-                throw new Exception("Trạng thái bài viết không được để trống.");
-            }
+        // NẾU LÀ ACTION BÀI ĐĂNG -> GỌI MODULE
+        if (in_array($action, $post_actions)) {
+            require_once '../models/db_xulybaidang.php';
         }
         
         // LUỒNG: LƯU CẬP NHẬT CHỈNH SỬA HỒ SƠ (USERS & HO_SO_CA_NHAN)
@@ -301,37 +235,26 @@ try {
             
             // Xử lý File Upload trong PHP thông qua biến toàn cục $_FILES
             if (isset($_FILES['file_tai_lieu']) && $_FILES['file_tai_lieu']['error'] == UPLOAD_ERR_OK) {
-                // Khai báo thư mục đích chứa file tài liệu
                 $upload_dir = '../uploads/document/';
                 
-                // Thuật toán kiểm tra và tạo thư mục nếu máy chủ chưa có sẵn
                 if (!is_dir($upload_dir)) {
                     @mkdir($upload_dir, 0777, true);
                 }
                 
-                // Lấy tên gốc của tệp tin do người dùng tải lên
                 $original_name = basename($_FILES['file_tai_lieu']['name']);
-                
-                // Gọi hàm làm sạch tên File (Xóa tiếng Việt có dấu, khoảng trắng thành gạch dưới)
                 $clean_name = preg_replace('/[^a-zA-Z0-9.\-_]/', '', str_replace(' ', '_', remove_vietnamese_accents($original_name)));
-                
-                // Nối chuỗi timestamp để đảm bảo 100% không trùng tên file
                 $file_name = time() . '_' . $clean_name;
                 $target_file = $upload_dir . $file_name;
                 
-                // Thực thi di chuyển tệp tin từ vùng nhớ tạm của server vào thư mục dự án
                 if (move_uploaded_file($_FILES['file_tai_lieu']['tmp_name'], $target_file)) {
-                    // Cắt bỏ dấu ../ ở đầu để lưu đường dẫn tương đối chuẩn vào Database
                     $file_path = ltrim($target_file, '../');
                 } else {
-                    // Nếu lỗi do phân quyền trên Mac/Linux
-                    throw new Exception("Lỗi máy chủ phân quyền: Không thể lưu file vật lý. Vui lòng cấp quyền (chmod 777) cho thư mục uploads.");
+                    throw new Exception("Lỗi máy chủ phân quyền: Không thể lưu file vật lý. Vui lòng cấp quyền (chmod 0777) cho thư mục uploads.");
                 }
             } else {
                 throw new Exception("Bạn chưa chọn tệp tin hoặc tệp tin bị lỗi trong quá trình tải.");
             }
             
-            // [GIẢI THÍCH SQL]: Lưu đường dẫn file vào cột `file_` của bảng `tai_lieu`
             $sql_insert_doc = "INSERT INTO tai_lieu (user_id, ten_tai_lieu, file_url, created_at) VALUES (:uid, :name, :filepath, NOW())";
             $stmt = $pdo->prepare($sql_insert_doc);
             $stmt->execute(['uid' => $current_user_id, 'name' => $doc_name, 'filepath' => $file_path]);
@@ -345,15 +268,12 @@ try {
             $event_name = sanitize_input($_POST['tieu_de'] ?? 'Sự kiện Học tập');
             $event_date = !empty($_POST['thoi_gian']) ? $_POST['thoi_gian'] : date('Y-m-d H:i:s');
             
-            // [BƯỚC 1]: Thêm tên và thời gian vào bảng su_kien gốc
             $sql_insert_event = "INSERT INTO su_kien (tieu_de, thoi_gian, created_at) VALUES (:title, :time, NOW())";
             $stmt = $pdo->prepare($sql_insert_event);
             $stmt->execute(['title' => $event_name, 'time'  => $event_date]);
             
-            // [BƯỚC 2]: Trích xuất ID vừa tạo bằng hàm lastInsertId
             $new_event_id = $pdo->lastInsertId();
             
-            // [BƯỚC 3]: Chèn User vào bảng trung gian thanh_vien_su_kien với quyền đã phê duyệt
             $sql_insert_member = "INSERT INTO thanh_vien_su_kien (su_kien_id, user_id, trang_thai_duyet, created_at) VALUES (:event_id, :uid, 'Approved', NOW())";
             $stmt_member = $pdo->prepare($sql_insert_member);
             $stmt_member->execute(['event_id' => $new_event_id, 'uid' => $current_user_id]);
@@ -370,16 +290,10 @@ try {
         // =============================================================================
         // CƠ CHẾ P.R.G (POST - REDIRECT - GET) CHỐNG SUBMIT TRÙNG DỮ LIỆU
         // =============================================================================
-        // [GIẢI THÍCH PHP]: Sau khi POST data xong, nếu để nguyên trang thì khi người dùng 
-        // bấm F5 trình duyệt sẽ hỏi "Confirm Form Resubmission" và có thể insert đúp vào DB.
-        // Giải pháp là ép trang web tự chuyển hướng (Redirect) sang phương thức GET.
         if($message_notify != "" && $message_type == "success") {
-            // Mã hóa chuỗi thông báo để truyền an toàn trên thanh địa chỉ URL
             $safe_msg = urlencode($message_notify);
             $safe_type = urlencode($message_type);
-            // Dùng hàm header thực hiện vòng lặp chuyển hướng nội bộ
             header("Location: " . $_SERVER['PHP_SELF'] . "?msg=" . $safe_msg . "&type=" . $safe_type);
-            // Lệnh exit giải phóng tài nguyên tiến trình lập tức
             exit;
         }
     }
@@ -477,7 +391,7 @@ try {
     $posts_data = $stmt_posts->fetchAll();
 
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 3]: LẤY DANH SÁCH BẠN BÈ VÀ KHẮC PHỤC LỖI HY093
+    // [TRUY VẤN 3]: LẤY DANH SÁCH BẠN BÈ
     // ---------------------------------------------------------------------------------
     // Do PDO cấu hình không mô phỏng (emulate_prepares = false) bảo mật cực cao,
     // ta không được phép dùng 1 tên parameter `:id` nhiều lần trong SQL. 
@@ -824,205 +738,7 @@ try {
 
                     <div class="col-12 col-lg-8">
                         
-                        <div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
-                            <div class="card-body p-4">
-                                <form method="POST" action="">
-                                    <input type="hidden" name="action" value="add_post">
-                                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-                                    
-                                    <div class="d-flex gap-3">
-                                        <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border border-2 border-light shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Ảnh bạn">
-                                        
-                                        <textarea 
-                                            class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6" 
-                                            name="noidung_post" 
-                                            rows="3" 
-                                            placeholder="Bạn muốn đăng tải nội dung học thuật gì lên mạng xã hội hôm nay?..." 
-                                            required 
-                                            style="resize: none;"
-                                        ></textarea>
-                                    </div>
-                                    
-                                    <hr class="text-muted border-dashed my-4 opacity-25">
-                                    
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div class="d-flex gap-2">
-                                            <button type="button" class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up PDF">
-                                                <i class="fa-solid fa-file-pdf me-1"></i> Gắn PDF
-                                            </button>
-                                            <button type="button" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up ảnh">
-                                                <i class="fa-solid fa-image me-1"></i> Hình ảnh
-                                            </button>
-                                        </div>
-                                        
-                                        <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
-                                            <i class="fa-solid fa-paper-plane me-2"></i> Gửi bài viết
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <?php if (count($posts_data) > 0): ?>
-                            
-                            <?php foreach ($posts_data as $post): ?>
-                            <article class="card shadow-sm border-0 mb-4 rounded-4 bg-white overflow-hidden">
-                                <div class="card-body p-4">
-                                    
-                                    <header class="d-flex align-items-center justify-content-between mb-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <img src="../assets/img/default-avatar.jpg" class="rounded-circle border shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Tác giả bài đăng">
-                                            
-                                            <div>
-                                                <h6 class="m-0 fw-bold text-dark fs-5 d-flex align-items-center gap-2">
-                                                    <?= htmlspecialchars($post['username']); ?>
-                                                    
-                                                    <?php if(!empty($post['giay_to_chung_minh'])): ?>
-                                                        <i class="fa-solid fa-circle-check text-primary fs-6" title="Tài khoản học sinh xác minh hệ thống"></i>
-                                                    <?php endif; ?>
-                                                </h6>
-                                                
-                                                <small class="text-muted fw-medium d-flex align-items-center gap-1">
-                                                    <i class="fa-regular fa-clock"></i> 
-                                                    <?= time_elapsed_string($post['created_at']); ?> 
-                                                    <span class="mx-1">•</span> 
-                                                    <i class="fa-solid fa-earth-americas" title="Phạm vi công khai toàn cầu"></i>
-                                                </small>
-                                            </div>
-                                        </div>
-                                        
-                                        <button class="btn btn-light rounded-circle text-muted shadow-sm" style="width:40px; height:40px;" aria-label="Hiện menu Tùy chọn chức năng">
-                                            <i class="fa-solid fa-ellipsis"></i>
-                                        </button>
-                                    </header>
-                                    
-                                    <div class="post-content mt-3">
-                                        <p class="m-0 fs-5 text-dark" style="line-height: 1.8; white-space: pre-line;">
-                                            <?= htmlspecialchars($post['noi_dung']); ?>
-                                        </p>
-                                    </div>
-                                    
-                                    <div class="d-flex justify-content-between align-items-center mt-4 border-bottom pb-3">
-                                        <div class="d-flex align-items-center gap-2 post-stats-text">
-                                            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 22px; height: 22px;">
-                                                <i class="fa-solid fa-thumbs-up" style="font-size: 10px;"></i>
-                                            </div>
-                                            <span class="fw-medium text-muted"><?= (int)$post['total_likes']; ?> lượt tương tác</span>
-                                        </div>
-                                        <div class="d-flex gap-3 text-muted fw-medium fs-6">
-                                            <span class="post-stats-text"><?= (int)$post['total_comments']; ?> phản hồi</span>
-                                            <span class="post-stats-text"><?= (int)$post['total_shares']; ?> chia sẻ</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <footer class="card-footer bg-white border-0 pb-3 px-4 pt-0">
-                                    <div class="d-flex justify-content-between gap-2">
-                                        
-                                        <form method="POST" action="" class="flex-fill m-0">
-                                            <input type="hidden" name="action" value="like_post">
-                                            <input type="hidden" name="post_id" value="<?= $post['post_id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-                                            
-                                            <button type="submit" class="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-interaction <?= ($post['is_liked_by_me'] > 0) ? 'active-like' : ''; ?>">
-                                                <i class="fa-solid fa-thumbs-up fs-5"></i>
-                                                <?= ($post['is_liked_by_me'] > 0) ? 'Đã thích' : 'Thích bài'; ?>
-                                            </button>
-                                        </form>
-                                        
-                                        <button 
-                                            type="button" 
-                                            class="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-interaction flex-fill" 
-                                            data-bs-toggle="collapse" 
-                                            data-bs-target="#collapseComments-<?= $post['post_id']; ?>" 
-                                            aria-expanded="false" 
-                                            aria-controls="collapseComments-<?= $post['post_id']; ?>"
-                                        >
-                                            <i class="fa-regular fa-comment fs-5"></i> Viết luận
-                                        </button>
-                                        
-                                        <form method="POST" action="" class="flex-fill m-0">
-                                            <input type="hidden" name="action" value="share_post">
-                                            <input type="hidden" name="post_id" value="<?= $post['post_id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-                                            <button type="submit" class="w-100 py-2 d-flex align-items-center justify-content-center gap-2 btn-interaction">
-                                                <i class="fa-solid fa-share fs-5"></i> Phân phối
-                                            </button>
-                                        </form>
-                                    </div>
-                                </footer>
-
-                                <div class="collapse" id="collapseComments-<?= $post['post_id']; ?>">
-                                    <div class="card-footer bg-light border-top border-light p-4">
-                                        
-                                        <?php
-                                            $sql_comments = "
-                                                SELECT c.noi_dung, c.created_at, u.username 
-                                                FROM binh_luan c 
-                                                INNER JOIN users u ON c.user_id = u.id 
-                                                WHERE c.bai_dang_id = :pid 
-                                                ORDER BY c.created_at ASC
-                                            ";
-                                            $stmt_cmt = $pdo->prepare($sql_comments);
-                                            $stmt_cmt->execute(['pid' => $post['post_id']]);
-                                            $comments = $stmt_cmt->fetchAll();
-                                        ?>
-                                        
-                                        <?php if(count($comments) > 0): ?>
-                                            <div class="mb-4">
-                                                <h6 class="fw-bold text-muted small mb-3 text-uppercase letter-spacing-1">Phản hồi học thuật</h6>
-                                                
-                                                <?php foreach($comments as $cmt): ?>
-                                                    <div class="d-flex gap-3 mb-3">
-                                                        <img src="../assets/img/default-avatar.jpg" class="rounded-circle border shadow-sm flex-shrink-0" width="40" height="40" alt="Avt Cmt">
-                                                        <div class="comment-box w-100 shadow-sm border border-white">
-                                                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                                                <h6 class="fw-bold m-0 text-dark fs-6"><?= htmlspecialchars($cmt['username']); ?></h6>
-                                                                <small class="text-muted fw-medium" style="font-size: 0.75rem;"><?= time_elapsed_string($cmt['created_at']); ?></small>
-                                                            </div>
-                                                            <p class="m-0 text-dark" style="font-size: 0.95rem; line-height: 1.5;">
-                                                                <?= nl2br(htmlspecialchars($cmt['noi_dung'])); ?>
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                <?php endforeach; ?>
-                                            </div>
-                                        <?php endif; ?>
-
-                                        <form method="POST" action="" class="d-flex gap-3 align-items-start mt-2">
-                                            <input type="hidden" name="action" value="comment_post">
-                                            <input type="hidden" name="post_id" value="<?= $post['post_id']; ?>">
-                                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-                                            
-                                            <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border shadow-sm flex-shrink-0" width="45" height="45" style="object-fit:cover;" alt="Avatar cá nhân">
-                                            
-                                            <div class="input-group shadow-sm rounded-pill overflow-hidden bg-white border border-light">
-                                                <input 
-                                                    type="text" 
-                                                    class="form-control border-0 px-4 py-2 fs-6 bg-transparent" 
-                                                    name="noi_dung_binh_luan" 
-                                                    placeholder="Đóng góp ý kiến của bạn vào cuộc thảo luận..." 
-                                                    required
-                                                >
-                                                <button class="btn btn-primary px-4 fw-bold" type="submit">
-                                                    <i class="fa-solid fa-paper-plane"></i>
-                                                </button>
-                                            </div>
-                                        </form>
-
-                                    </div>
-                                </div> </article>
-                            <?php endforeach; ?>
-                            
-                        <?php else: ?>
-                            <div class="text-center py-5 bg-white shadow-sm rounded-4 border border-light">
-                                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 100px; height: 100px;">
-                                    <i class="fa-regular fa-pen-to-square fs-1 text-primary opacity-75"></i>
-                                </div>
-                                <h4 class="text-dark fw-bold">Chưa có dấu ấn học thuật cá nhân</h4>
-                                <p class="text-muted fs-6 m-0 px-4">Hãy chia sẻ trạng thái học tập đầu tiên của bạn để kết nối với những người dùng The Bunny khác nhé!</p>
-                            </div>
-                        <?php endif; ?>
+                        <?php include '../includes/bai-dang.php'; ?>
                         
                     </div>
                 </div>
@@ -1049,19 +765,19 @@ try {
                                     <dt class="col-sm-4 text-muted fw-normal mb-3">Nhóm quyền hạn</dt>
                                     <dd class="col-sm-8 mb-3"><span class="badge bg-primary fs-6 px-3 py-2"><?= htmlspecialchars($user_type ?: 'Chưa phân cấp hạng'); ?></span></dd>
                                     
-                                    <dt class="col-sm-4 text-muted fw-normal mb-3">Trạng thái Căn cước</dt>
+                                    <dt class="col-sm-4 text-muted fw-normal mb-3">Trạng thái</dt>
                                     <dd class="col-sm-8 mb-3">
                                         <?php if($is_verified): ?>
-                                            <span class="text-success fw-bold"><i class="fa-solid fa-shield-check"></i> Đã nộp hồ sơ Chứng minh</span>
+                                            <span class="text-success fw-bold"><i class="fa-solid fa-shield-check"></i> Là giáo viên</span>
                                         <?php else: ?>
-                                            <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Hệ thống chưa thể xác minh</span>
+                                            <span class="text-danger fw-bold"><i class="fa-solid fa-triangle-exclamation"></i> Chưa thể xác minh</span>
                                         <?php endif; ?>
                                     </dd>
                                 </dl>
                             </div>
                             
                             <div class="col-md-6">
-                                <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-book-open-reader text-secondary me-2"></i> Thông tin Tự giới thiệu Bản thân</h5>
+                                <h5 class="fw-bold text-dark mb-4"><i class="fa-solid fa-book-open-reader text-secondary me-2"></i> Thông tin tự giới thiệu</h5>
                                 
                                 <div class="bg-light p-4 rounded-4 border border-secondary-subtle h-100">
                                     <p class="m-0 fs-5 text-dark fw-medium" style="line-height: 1.8;">
@@ -1144,13 +860,13 @@ try {
                     <div class="card-body">
                         
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
-                            <h3 class="fw-bold m-0 text-dark"><i class="fa-regular fa-calendar-check text-primary me-3"></i>Danh sách Lịch trình Nhóm học tập</h3>
+                            <h3 class="fw-bold m-0 text-dark"><i class="fa-regular fa-calendar-check text-primary me-3"></i>Danh sách Sự kiện</h3>
                             <button 
                                 class="btn btn-warning fw-bold text-dark px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#addEventModal"
                             >
-                                <i class="fa-solid fa-calendar-plus fs-5"></i> Tổ chức Lịch trình mới
+                                <i class="fa-solid fa-calendar-plus fs-5"></i> Sự kiện mới
                             </button>
                         </div>
                         
@@ -1180,7 +896,7 @@ try {
                                                 </p>
                                             </div>
                                             
-                                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill shadow-sm">Thành viên Ban tổ chức</button>
+                                            <button class="btn btn-outline-primary w-100 fw-bold rounded-pill shadow-sm">Tham gia sự kiện</button>
                                         </div>
                                     </div>
                                 </div>
