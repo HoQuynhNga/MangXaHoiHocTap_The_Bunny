@@ -35,7 +35,7 @@
                     <img src="<?= $user_avatar ?>" alt="Avatar" class="rounded-circle border border-2" width="40" height="40">
                 </a>
                 
-                <a href="./auth/db_xulydangxuat.php" class="btn btn-outline-danger btn-sm rounded-circle" title="Đăng xuất" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
+                <a href="../models/db_xulydangxuat.php" class="btn btn-outline-danger btn-sm rounded-circle" title="Đăng xuất" style="width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
             </div>
