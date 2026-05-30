@@ -140,7 +140,10 @@ $message_type        = "success";
 
 // [LƯU Ý PHP]: Lấy ID người dùng từ Session. Nếu chưa có chức năng đăng nhập,
 // tạm thời hard-code là 1 (Tài khoản Admin đầu tiên) để có dữ liệu Test.
-$current_user_id     = $_SESSION['user_id'] ?? 1; 
+// ID của người đang đăng nhập (Bạn)
+$current_user_id = $_SESSION['user_id'] ?? 1; 
+// Lấy ID của chủ nhân trang cá nhân (Lấy từ URL, nếu không có thì mặc định là nhà của bạn)
+$profile_id = isset($_GET['id']) ? (int)$_GET['id'] : $current_user_id;
 
 // Khởi tạo mảng rỗng để hứng dữ liệu từ CSDL, tránh văng lỗi nếu DB trống
 $posts_data          = [];
@@ -281,6 +284,25 @@ try {
             $message_notify = "Lên lịch sự kiện khai giảng khóa học thành công!";
             $message_type   = "success";
         }
+        // LUỒNG: HỦY KẾT NỐI BẠN CÙNG TIẾN
+        elseif ($action == 'remove_buddy') {
+            $buddy_id = (int)$_POST['buddy_id'];
+            
+            // Tách biệt tên tham số: uid1, fid1 và fid2, uid2
+            $sql_del_buddy = "DELETE FROM ban_cung_tien WHERE (user_id = :uid1 AND friend_user_id = :fid1) OR (user_id = :fid2 AND friend_user_id = :uid2)";
+            $stmt = $pdo->prepare($sql_del_buddy);
+            
+            // Truyền đủ 4 giá trị tương ứng
+            $stmt->execute([
+                'uid1' => $current_user_id, 
+                'fid1' => $buddy_id,
+                'fid2' => $buddy_id,
+                'uid2' => $current_user_id
+            ]);
+            
+            $message_notify = "Đã hủy kết nối bạn cùng tiến thành công.";
+            $message_type   = "success";
+        }
         
         // Nếu không khớp luồng nào thì bắn lỗi bảo mật
         else {
@@ -293,7 +315,14 @@ try {
         if($message_notify != "" && $message_type == "success") {
             $safe_msg = urlencode($message_notify);
             $safe_type = urlencode($message_type);
-            header("Location: " . $_SERVER['PHP_SELF'] . "?msg=" . $safe_msg . "&type=" . $safe_type);
+            
+            // Nối lại ID vào URL nếu đang ở trang của người khác
+            $url_redirect = $_SERVER['PHP_SELF'] . "?msg=" . $safe_msg . "&type=" . $safe_type;
+            if (isset($_GET['id'])) {
+                $url_redirect .= "&id=" . (int)$_GET['id'];
+            }
+            
+            header("Location: " . $url_redirect);
             exit;
         }
     }
@@ -332,7 +361,7 @@ try {
     ";
     
     $stmt_profile = $pdo->prepare($sql_profile);
-    $stmt_profile->execute(['id' => $current_user_id]);
+    $stmt_profile->execute(['id' => $profile_id]);
     
     // Gán dữ liệu kéo về được vào các biến toàn cục
     if ($row_profile = $stmt_profile->fetch()) {
@@ -354,7 +383,7 @@ try {
     }
 
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 2 NÂNG CẤP]: LẤY DANH SÁCH BÀI ĐĂNG KÈM THEO CHỈ SỐ TƯƠNG TÁC (LIKE/COMMENT)
+    // [TRUY VẤN 2]: LẤY DANH SÁCH BÀI ĐĂNG KÈM THEO CHỈ SỐ TƯƠNG TÁC (LIKE/COMMENT)
     // ---------------------------------------------------------------------------------
     // [GIẢI THÍCH SQL]: Đây là truy vấn phức tạp nhất. Nó sử dụng Subquery (Truy vấn lồng)
     // để đếm tổng số Like, số Comment, số Share của từng bài viết.
@@ -383,10 +412,7 @@ try {
     $stmt_posts = $pdo->prepare($sql_posts);
     // Execute với 2 tham số: Người đang xem trang, và Chủ nhân của trang profile
     // (Trong ngữ cảnh này user đang xem chính trang của mình nên cả 2 tham số đều là $current_user_id)
-    $stmt_posts->execute([
-        'uid'        => $current_user_id,
-        'profile_id' => $current_user_id
-    ]);
+    $stmt_posts->execute(['uid' => $current_user_id, 'profile_id' => $profile_id]);
     // Trả về mảng bài đăng
     $posts_data = $stmt_posts->fetchAll();
 
@@ -412,15 +438,11 @@ try {
     ";
     $stmt_buddies = $pdo->prepare($sql_buddies);
     // Gán tham số đầy đủ
-    $stmt_buddies->execute([
-        'id1' => $current_user_id,
-        'id2' => $current_user_id,
-        'id3' => $current_user_id
-    ]);
+    $stmt_buddies->execute(['id1' => $profile_id, 'id2' => $profile_id, 'id3' => $profile_id]);
     $buddies_data = $stmt_buddies->fetchAll();
 
     // ---------------------------------------------------------------------------------
-    // [TRUY VẤN 4]: LẤY DANH SÁCH KHO TÀI LIỆU SỐ
+    // [TRUY VẤN 4]: LẤY DANH SÁCH TÀI LIỆU
     // ---------------------------------------------------------------------------------
     // Đã đồng bộ với bảng tai_lieu trong the_bunny_db.sql (Sử dụng cột file_)
     $sql_docs = "
@@ -437,7 +459,7 @@ try {
             created_at DESC
     ";
     $stmt_docs = $pdo->prepare($sql_docs);
-    $stmt_docs->execute(['id' => $current_user_id]);
+    $stmt_docs->execute(['id' => $profile_id]);
     $docs_data = $stmt_docs->fetchAll();
 
     // ---------------------------------------------------------------------------------
@@ -461,7 +483,7 @@ try {
     ";
     
     $stmt_events = $pdo->prepare($sql_events);
-    $stmt_events->execute(['id' => $current_user_id]);
+    $stmt_events->execute(['id' => $profile_id]);
     $events_data = $stmt_events->fetchAll();
 
 } catch (PDOException $e) { 
@@ -488,16 +510,53 @@ try {
     <link href="../assets/css/trang-ca-nhan.css" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="../assets/js/trang-ca-nhan.js" defer></script>
-    
     <script defer>
-        // Sự kiện DOMContentLoaded đảm bảo JS này chạy sau khi Bootstrap JS đã được nạp
         document.addEventListener('DOMContentLoaded', function () {
-            // Quét và kích hoạt công cụ Tooltip (Nhãn dán nổi) cho biểu tượng Tích xanh
+            // 1. KÍCH HOẠT TOOLTIP BOOTSTRAP
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
+
+            // 2. PHỤC HỒI TAB ĐANG MỞ (Từ bộ nhớ tạm hoặc URL)
+            var savedTab = sessionStorage.getItem('bunny_active_tab') || window.location.hash;
+            if (savedTab) {
+                var targetTab = document.querySelector('#profileTabs button[data-bs-target="' + savedTab + '"]');
+                if (targetTab) {
+                    var tab = new bootstrap.Tab(targetTab);
+                    tab.show();
+                }
+            }
+
+            // Gắn URL Hash khi người dùng chủ động chuyển tab
+            var triggerTabList = [].slice.call(document.querySelectorAll('#profileTabs button[data-bs-toggle="tab"]'));
+            triggerTabList.forEach(function (triggerEl) {
+                triggerEl.addEventListener('shown.bs.tab', function (event) {
+                    var targetId = event.target.getAttribute('data-bs-target');
+                    history.replaceState(null, null, targetId);
+                });
+            });
+
+            // 3. PHỤC HỒI TỌA ĐỘ THANH CUỘN DỌC
+            var savedScrollPos = sessionStorage.getItem('bunny_scroll_pos');
+            if (savedScrollPos !== null) {
+                window.scrollTo({ top: parseInt(savedScrollPos), behavior: 'auto' });
+                // Xóa rác dữ liệu sau khi phục hồi xong
+                sessionStorage.removeItem('bunny_scroll_pos');
+                sessionStorage.removeItem('bunny_active_tab'); 
+            }
+        });
+
+        // 4. LƯU LẠI MỌI THỨ NGAY TRƯỚC KHI TRANG TẢI LẠI (SUBMIT FORM)
+        window.addEventListener('beforeunload', function () {
+            // Lưu tọa độ cuộn
+            sessionStorage.setItem('bunny_scroll_pos', window.scrollY);
+            
+            // Lưu ID của Tab đang mở
+            var activeTab = document.querySelector('#profileTabs button.active');
+            if(activeTab) {
+                sessionStorage.setItem('bunny_active_tab', activeTab.getAttribute('data-bs-target'));
+            }
         });
     </script>
 
@@ -523,8 +582,8 @@ try {
         <div style="height: 58px;"></div>
     <?php endif; ?>
 
-    <nav>
-    <?php include '../includes/header.php'; ?>
+    <nav class="sticky-top" style="z-index: 1030;">
+        <?php include '../includes/header.php'; ?>
     </nav>
 
 
@@ -579,16 +638,19 @@ try {
                     </div>
                     
                     <div class="mt-4 mt-md-0 pb-3">
-                        <button 
-                            type="button"
-                            class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#editProfileModal"
-                            aria-label="Nút nhấn mở cửa sổ điền thông tin thay đổi hồ sơ"
-                        >
-                            <i class="fa-solid fa-pen-to-square"></i> Cập nhật hồ sơ hệ thống
-                        </button>
+                        <?php if ($profile_id == $current_user_id): ?>
+                            <button 
+                                type="button"
+                                class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#editProfileModal"
+                                aria-label="Nút nhấn mở cửa sổ điền thông tin thay đổi hồ sơ"
+                            >
+                                <i class="fa-solid fa-pen-to-square"></i> Cập nhật hồ sơ
+                            </button>
+                        <?php endif; ?>
                     </div>
+                    
                 </div>
                 
                 <div class="d-flex justify-content-center justify-content-md-start gap-4 gap-md-5 mt-5 pt-4 border-top border-light">
@@ -674,7 +736,7 @@ try {
                     aria-controls="events" 
                     aria-selected="false"
                 >
-                    <i class="fa-solid fa-calendar-days"></i> <span>Kế hoạch Sự kiện</span>
+                    <i class="fa-solid fa-calendar-days"></i> <span>Sự kiện</span>
                 </button>
             </li>
             
@@ -689,7 +751,7 @@ try {
                     aria-controls="buddies" 
                     aria-selected="false"
                 >
-                    <i class="fa-solid fa-user-group"></i> <span>Bạn đồng hành</span>
+                    <i class="fa-solid fa-user-group"></i> <span>Bạn cùng tiến</span>
                 </button>
             </li>
             
@@ -717,7 +779,7 @@ try {
                                             <i class="fa-solid fa-school fs-5 w-20px text-center"></i>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block fw-medium mb-1">Trường Cơ sở / THPT</small>
+                                            <small class="text-muted d-block fw-medium mb-1">Trường phổ thông</small>
                                             <strong class="text-dark"><?= htmlspecialchars($truong_hoc ?: 'Chưa cung cấp dữ liệu'); ?></strong>
                                         </div>
                                     </li>
@@ -727,7 +789,7 @@ try {
                                             <i class="fa-solid fa-building-columns fs-5 w-20px text-center"></i>
                                         </div>
                                         <div>
-                                            <small class="text-muted d-block fw-medium mb-1">Đại học / Học viện liên kết</small>
+                                            <small class="text-muted d-block fw-medium mb-1">Đại học / Học viện</small>
                                             <strong class="text-dark"><?= htmlspecialchars($truong_dai_hoc ?: 'Chưa cung cấp dữ liệu'); ?></strong>
                                         </div>
                                     </li>
@@ -800,13 +862,13 @@ try {
                     <div class="card-body">
                         
                         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center mb-5 gap-3 border-bottom pb-4">
-                            <h3 class="fw-bold m-0 text-dark"><i class="fa-solid fa-box-archive text-warning me-3"></i>Thư viện Học liệu số</h3>
+                            <h3 class="fw-bold m-0 text-dark"><i class="fa-solid fa-box-archive text-warning me-3"></i>Quản lý tài liệu</h3>
                             <button 
                                 class="btn btn-success fw-bold px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2" 
                                 data-bs-toggle="modal" 
                                 data-bs-target="#addDocModal"
                             >
-                                <i class="fa-solid fa-cloud-arrow-up fs-5"></i> Cống hiến tài liệu
+                                <i class="fa-solid fa-cloud-arrow-up fs-5"></i> Tải lên tài liệu
                             </button>
                         </div>
                         
@@ -947,14 +1009,27 @@ try {
                                             </span>
                                         </div>
                                         
-                                        <div class="d-flex gap-2 w-100">
-                                            <button class="btn btn-primary flex-fill fw-bold rounded-pill shadow-sm" aria-label="Soạn tin nhắn riêng tư với liên kết này">
-                                                <i class="fa-solid fa-paper-plane me-1"></i> Nhắn tin
-                                            </button>
-                                            <button class="btn btn-light rounded-pill border shadow-sm px-3 text-danger hover-bg-danger transition" aria-label="Xóa hoàn toàn khỏi danh sách bạn bè">
-                                                <i class="fa-solid fa-user-xmark"></i>
-                                            </button>
-                                        </div>
+                                        <div class="d-flex gap-2 w-100 mt-auto">
+    <!-- Nút 1: Xem hồ sơ -->
+    <a href="trang-ca-nhan.php?id=<?= $buddy['id']; ?>" class="btn btn-outline-primary flex-fill fw-bold rounded-pill shadow-sm" title="Vào xem trang cá nhân">
+        <i class="fa-solid fa-user"></i> Hồ sơ
+    </a>
+    
+    <!-- Nút 2: Nhắn tin -->
+    <button class="btn btn-primary flex-fill fw-bold rounded-pill shadow-sm" title="Nhắn tin">
+        <i class="fa-solid fa-paper-plane"></i>
+    </button>
+    
+    <!-- Nút 3: Xóa bạn -->
+    <form method="POST" action="" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn hủy kết nối học tập với người này?');">
+        <input type="hidden" name="action" value="remove_buddy">
+        <input type="hidden" name="buddy_id" value="<?= $buddy['id']; ?>">
+        <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+        <button type="submit" class="btn btn-light rounded-pill border shadow-sm px-3 text-danger hover-bg-danger transition" title="Xóa hoàn toàn khỏi danh sách bạn bè">
+            <i class="fa-solid fa-user-xmark"></i>
+        </button>
+    </form>
+</div>
                                         
                                     </div>
                                 </div>
@@ -1000,18 +1075,18 @@ try {
                         <div class="alert alert-info border-0 rounded-3 mb-4 d-flex align-items-center gap-3 shadow-sm">
                             <i class="fa-solid fa-circle-info fs-3"></i>
                             <div class="fs-6">
-                                <strong>Khuyến nghị từ Hội đồng máy chủ:</strong> 
-                                Các trường thông tin cơ sở cung cấp dưới đây sẽ liên kết chặt chẽ vào cơ sở dữ liệu hệ thống thông qua khóa ID. Dữ liệu này sẽ được lưu cố định và hiển thị công khai trên diện rộng.
+                                <strong>Lưu ý từ The Bunny</strong> 
+                                Dữ liệu này sẽ được lưu cố định và hiển thị công khai trên diện rộng.
                             </div>
                         </div>
 
                         <div class="row g-4">
                             
                             <div class="col-md-6">
-                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Học Vụ Hệ Thống (Bảng Khung)</h6>
+                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Thông tin cá nhân</h6>
                                 
                                 <div class="mb-4">
-                                    <label class="form-label fw-bold text-dark fs-6">Định danh hiển thị (Tên hệ thống) <span class="text-danger">*</span></label>
+                                    <label class="form-label fw-bold text-dark fs-6">Định danh hiển thị<span class="text-danger">*</span></label>
                                     <input 
                                         type="text" 
                                         class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-3" 
@@ -1020,11 +1095,11 @@ try {
                                         required
                                         placeholder="Ghi rõ Họ Tên thật của bạn"
                                     >
-                                    <div class="form-text mt-2"><i class="fa-solid fa-shield-halved text-success"></i> Tên dùng để hệ thống tra cứu đồng bộ mạng lưới.</div>
+                                    <div class="form-text mt-2"><i class="fa-solid fa-shield-halved text-success"></i> Tên dùng để tìm kiếm bạn học</div>
                                 </div>
                                 
                                 <div class="mb-4">
-                                    <label class="form-label fw-bold text-dark fs-6">Tổ chức Cấp 3 / Trường Phổ Thông Cơ sở</label>
+                                    <label class="form-label fw-bold text-dark fs-6">Trường phổ thông</label>
                                     <div class="input-group shadow-sm">
                                         <span class="input-group-text bg-light border-secondary-subtle"><i class="fa-solid fa-school text-muted"></i></span>
                                         <input 
@@ -1038,7 +1113,7 @@ try {
                                 </div>
                                 
                                 <div class="mb-4">
-                                    <label class="form-label fw-bold text-dark fs-6">Cơ sở Đào tạo Cao Đẳng / Đại Học / Học Viện</label>
+                                    <label class="form-label fw-bold text-dark fs-6">Đại học</label>
                                     <div class="input-group shadow-sm">
                                         <span class="input-group-text bg-light border-secondary-subtle"><i class="fa-solid fa-building-columns text-muted"></i></span>
                                         <input 
@@ -1053,14 +1128,14 @@ try {
                             </div>
                             
                             <div class="col-md-6 d-flex flex-column">
-                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Bài Luận Tự Giới Thiệu (Nhóm Hồ Sơ Chi Tiết Mở Rộng)</h6>
+                                <h6 class="fw-bold text-muted text-uppercase mb-3 border-bottom pb-2">Tiểu sử cá nhân</h6>
                                 
                                 <div class="mb-3 flex-grow-1 d-flex flex-column">
-                                    <label class="form-label fw-bold text-dark fs-6">Soạn thảo văn bản tuyên ngôn định danh chuyên sâu</label>
+                                    <label class="form-label fw-bold text-dark fs-6">Sở trường của bạn</label>
                                     <textarea 
                                         class="form-control border-secondary-subtle p-3 fw-medium rounded-3 flex-grow-1 shadow-sm" 
                                         name="thong_tin_dinh_danh" 
-                                        placeholder="Hãy sử dụng khung nhập liệu tự do này để khai báo các đặc điểm mạnh mẽ không có khuôn khổ như: Sở thích học tập cá nhân, những châm ngôn lý tưởng, chuyên ngành dự định thi Đại Học hoặc các thành tích giải thưởng học sinh giỏi quốc gia bạn đã đạt được trong quá khứ... (Trình biên dịch máy chủ Backend sẽ tự động bảo toàn các cấu trúc khoảng trắng và xuống dòng của bạn)"
+                                        placeholder="Sở thích học tập cá nhân, những châm ngôn lý tưởng, chuyên ngành dự định thi Đại học hoặc các thành tích giải thưởng học sinh giỏi quốc gia bạn đã đạt được trong quá khứ... (Trình biên dịch máy chủ Backend sẽ tự động bảo toàn các cấu trúc khoảng trắng và xuống dòng của bạn)"
                                         style="resize: none; min-height: 250px;"
                                     ><?= htmlspecialchars($thong_tin_dinh_danh); ?></textarea>
                                 </div>
@@ -1070,10 +1145,10 @@ try {
                     </div> 
                     
                     <div class="modal-footer bg-light border-top-0 py-4 px-5 rounded-bottom-4 justify-content-between">
-                        <small class="text-muted fw-medium"><i class="fa-solid fa-lock text-success"></i> Truyền tải An toàn mã hóa qua cầu nối giao thức PDO chuẩn MySQL</small>
+                        <small class="text-muted fw-medium"><i class="fa-solid fa-lock text-success"></i> Cảm ơn bạn vì đã là Bunniers</small>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm border" data-bs-dismiss="modal">Từ chối thao tác</button>
-                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-pill shadow-sm"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu Trữ Đồng Bộ Hóa</button>
+                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill shadow-sm border" data-bs-dismiss="modal">Huỷ</button>
+                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-pill shadow-sm"><i class="fa-solid fa-cloud-arrow-up me-2"></i> Lưu</button>
                         </div>
                     </div>
                 </div> 

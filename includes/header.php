@@ -1,3 +1,5 @@
+<link rel="stylesheet" href="../assets/css/root.css">
+<link rel="stylesheet" href="../assets/css/trang-chu.css">
 <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
         <div class="d-flex align-items-center gap-4">
             <a href="trang-chu.php" class="brand-logo text-decoration-none">
