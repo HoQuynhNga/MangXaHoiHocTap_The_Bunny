@@ -1,4 +1,3 @@
-```php
 <?php
 require_once 'config.php';
 
@@ -386,4 +385,3 @@ echo "
 </body>
 </html>";
 ?>
-```

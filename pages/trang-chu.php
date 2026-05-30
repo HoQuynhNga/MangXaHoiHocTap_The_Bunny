@@ -262,7 +262,7 @@ $shortcuts = [
 
             <div class="nav-menu">
                 <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm) <span class="badge-count">3</span></a>
+                <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Bạn cùng tiến</a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
                 <a href="#" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
@@ -503,9 +503,7 @@ $shortcuts = [
         <button class="nav-btn-mobile active">
             <i class="fa-solid fa-house"></i><span>Trang chủ</span>
         </button>
-        <button class="nav-btn-mobile">
-            <i class="fa-solid fa-user-group"></i><span>Nhóm</span>
-        </button>
+        <a href="ban-cung-tien.php" class="nav-btn-mobile"><i class="fa-solid fa-user-group"></i><span>Bạn bè</span></a>
         <button class="nav-btn-mobile" style="color: var(--bunny-primary); margin-top: -15px;">
             <div class="bg-primary bg-opacity-10 rounded-circle p-2 shadow-sm"><i class="fa-solid fa-plus fs-4"></i></div>
         </button>
