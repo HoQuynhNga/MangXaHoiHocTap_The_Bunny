@@ -13,10 +13,10 @@
         </div>
 
         <div class="d-flex align-items-center gap-5">
-            <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
+            <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Thách đấu">
                 <i class="fa-solid fa-khanda fa-2x"></i>
             </a>
-            <a href="hang-tho.php" class="btn-icon text-decoration-none" title="Thông báo">
+            <a href="hang-tho.php" class="btn-icon text-decoration-none" title="Hang thỏ">
             <i class="fa-solid fa-people-group fa-2x"></i>
             </a>
             
