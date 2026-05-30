@@ -1,5 +1,3 @@
-src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-
 // JS Xử lý chọn đáp án
 function selectOption(element) {
     const options = document.querySelectorAll('.mcq-option');
