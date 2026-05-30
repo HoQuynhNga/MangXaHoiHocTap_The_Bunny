@@ -101,7 +101,7 @@ try {
 
     <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
         <div class="d-flex align-items-center gap-4">
-            <a href="../trang-chu.php" class="brand-logo text-decoration-none"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
+            <a href="trang-chu.php" class="brand-logo text-decoration-none"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
             
             <div class="search-bar d-none d-md-flex">
                 <i class="fa-solid fa-search text-muted"></i>
@@ -127,7 +127,7 @@ try {
                 <span class="fw-bold fs-6">15</span>
             </div>
             
-            <a href="../trang-ca-nhan.php">
+            <a href="trang-ca-nhan.php">
                 <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border cursor-pointer" width="40" height="40" alt="Profile">
             </a>
         </div>
