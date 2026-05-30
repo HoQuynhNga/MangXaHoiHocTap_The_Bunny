@@ -2,8 +2,8 @@
 session_start();
 
 require_once '../config/config.php';
-require_once '../includes/bunny_helpers.php';
-require_once '../includes/inbox_repository.php';
+require_once './messages/bunny_helpers.php';
+require_once '/messages/inbox_repository.php';
 
 $currentUserId = (int) ($_SESSION['user_id'] ?? DEFAULT_USER_ID);
 
