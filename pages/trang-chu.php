@@ -1,4 +1,5 @@
 <?php
+ob_start();
 session_start();
 
 // ======================================================
@@ -274,7 +275,7 @@ try {
 // ======================================================
 $allFriends = [];
 try {
-    // Lấy TẤT CẢ bạn bè đã Accepted, sắp xếp người Online lên đầu
+    // Tách riêng các tham số uid1, uid2, uid3 để tuân thủ PDO Emulate Prepares = False
     $sql_friends = "
         SELECT 
             u.id, 
@@ -282,14 +283,21 @@ try {
             u.is_online
         FROM ban_cung_tien b
         INNER JOIN users u ON (b.user_id = u.id OR b.friend_user_id = u.id)
-        WHERE (b.user_id = :uid OR b.friend_user_id = :uid)
-          AND u.id != :uid
+        WHERE (b.user_id = :uid1 OR b.friend_user_id = :uid2)
+          AND u.id != :uid3
           AND b.status = 'Accepted'
         ORDER BY u.is_online DESC, u.username ASC
     ";
     
     $stmt_friends = $pdo->prepare($sql_friends);
-    $stmt_friends->execute(['uid' => $current_user_id]);
+    
+    // Gán 3 lần cùng 1 giá trị $current_user_id cho 3 biến khác nhau
+    $stmt_friends->execute([
+        'uid1' => $current_user_id,
+        'uid2' => $current_user_id,
+        'uid3' => $current_user_id
+    ]);
+    
     $friends_raw = $stmt_friends->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($friends_raw as $friend) {
@@ -297,7 +305,7 @@ try {
             'id'        => $friend['id'],
             'name'      => $friend['name'],
             'avatar'    => '../assets/img/default-avatar.jpg',
-            'is_online' => $friend['is_online'] // Trả về 1 (Online) hoặc 0 (Offline)
+            'is_online' => $friend['is_online']
         ];
     }
 } catch (PDOException $e) {
@@ -363,44 +371,6 @@ try {
         <main class="feed-main">
 
             <!-- Form đăng bài mới -->
-<div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
-    <div class="card-body p-4">
-        <form method="POST" action="">
-            <input type="hidden" name="action" value="add_post">
-            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-            
-            <div class="d-flex gap-3">
-                <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border border-2 border-light shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Ảnh bạn">
-                
-                <textarea 
-                    class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6" 
-                    name="noidung_post" 
-                    rows="3" 
-                    placeholder="Bạn muốn đăng tải nội dung học thuật gì lên mạng xã hội hôm nay?..." 
-                    required 
-                    style="resize: none;"
-                ></textarea>
-            </div>
-            
-            <hr class="text-muted border-dashed my-4 opacity-25">
-            
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up PDF">
-                        <i class="fa-solid fa-file-pdf me-1"></i> Gắn PDF
-                    </button>
-                    <button type="button" class="btn btn-outline-success btn-sm fw-bold rounded-pill px-3 shadow-sm" disabled title="Tạm bảo trì tính năng up ảnh">
-                        <i class="fa-solid fa-image me-1"></i> Hình ảnh
-                    </button>
-                </div>
-                
-                <button type="submit" class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow">
-                    <i class="fa-solid fa-paper-plane me-2"></i> Gửi bài viết
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 
             <!-- BÀI ĐĂNG -->
             <?php include '../includes/danh-sach-bai-dang.php'; ?>
