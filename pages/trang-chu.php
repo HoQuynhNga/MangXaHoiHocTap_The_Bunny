@@ -272,7 +272,15 @@ $onlineFriends = [];
     <link href="../assets/css/trang-chu.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+    <style>
+        .btn-interaction { background-color: transparent; border: none; font-weight: bold; color: #6c757d; border-radius: 8px; transition: all 0.2s; }
+        .btn-interaction:hover { background-color: #f1f3f5; color: #495057; }
+        .btn-interaction.active-like { color: #0d6efd; } /* Nút Thích chuyển sang màu xanh dương nếu active */
+        .btn-interaction.active-like:hover { background-color: #e7f1ff; }
+        .comment-box { background-color: #f8f9fa; border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+        .post-stats-text { font-size: 0.85rem; color: #6c757d; cursor: pointer; }
+        .post-stats-text:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
 
