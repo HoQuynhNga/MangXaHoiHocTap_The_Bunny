@@ -56,6 +56,24 @@ try
 
     $roomId =
         $pdo->lastInsertId();
+    
+    $stmtParticipant = $pdo->prepare("
+    INSERT INTO battle_participants
+        (
+            room_id,
+            user_id
+        )
+        VALUES
+        (
+            ?,
+            ?
+        )
+    ");
+
+    $stmtParticipant->execute([
+        $roomId,
+        $hostId
+    ]);
 
     //------------------------------------------------
     // CREATE INVITE

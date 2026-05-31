@@ -9,6 +9,13 @@ if(!isset($_GET['room_id']))
     die("Thiếu room_id");
 }
 
+$currentQuestion =
+    isset($_GET['question'])
+    ?
+    (int)$_GET['question']
+    :
+    1;
+
 $roomId = (int)$_GET['room_id'];
 
 try
@@ -35,7 +42,7 @@ catch(PDOException $e)
 $stmt = $pdo->prepare("
     SELECT *
     FROM battle_rooms
-    WHERE id = ?
+    WHERE room_id = ?
 ");
 
 $stmt->execute([
@@ -67,6 +74,37 @@ $questions =
         PDO::FETCH_ASSOC
     );
 
+$totalQuestions =
+    count($questions);
+
+if(
+    $currentQuestion >
+    $totalQuestions
+)
+{
+    die("Đã hoàn thành trận đấu");
+}
+
+$question =
+    $questions[
+        $currentQuestion - 1
+    ];
+
+$nextQuestionUrl = "";
+
+if(
+    $currentQuestion
+    <
+    $totalQuestions
+)
+{
+    $nextQuestionUrl =
+        "battle_room.php?room_id="
+        . $roomId
+        . "&question="
+        . ($currentQuestion + 1);
+}
+
 if(count($questions) == 0)
 {
     die("Bộ đề chưa có câu hỏi");
@@ -84,19 +122,14 @@ if(count($questions) == 0)
     <script src="../assets/js/battle_room.js"></script>
 
 </head>
-<body>
-
+<body
+    data-next-question="<?= $nextQuestionUrl ?>"
+>
 <h2>
     Battle Room #<?= $roomId ?>
 </h2>
 
 <div id="question-container">
-
-<?php
-
-$question = $questions[0];
-
-?>
 
 <input
     type="hidden"
@@ -119,7 +152,8 @@ $question = $questions[0];
 </h3>
 
 <button
-    onclick="submitAnswer('A')"
+    class="answer-btn"
+    onclick="selectAnswer('A')"
 >
     A.
     <?= htmlspecialchars($question['lua_chon_a']) ?>
@@ -128,7 +162,8 @@ $question = $questions[0];
 <br><br>
 
 <button
-    onclick="submitAnswer('B')"
+    class="answer-btn"
+    onclick="selectAnswer('B')"
 >
     B.
     <?= htmlspecialchars($question['lua_chon_b']) ?>
@@ -137,7 +172,8 @@ $question = $questions[0];
 <br><br>
 
 <button
-    onclick="submitAnswer('C')"
+    class="answer-btn"
+    onclick="selectAnswer('C')"
 >
     C.
     <?= htmlspecialchars($question['lua_chon_c']) ?>
@@ -146,7 +182,8 @@ $question = $questions[0];
 <br><br>
 
 <button
-    onclick="submitAnswer('D')"
+    class="answer-btn"
+    onclick="selectAnswer('D')"
 >
     D.
     <?= htmlspecialchars($question['lua_chon_d']) ?>
