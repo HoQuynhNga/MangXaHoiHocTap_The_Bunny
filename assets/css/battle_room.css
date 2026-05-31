@@ -1,0 +1,92 @@
+/* =========================================
+   BATTLE ROOM STYLING OVERRIDES (2026)
+========================================= */
+
+/* Overrides to make standard buttons act like thach_dau interactive divs */
+button.mcq-option {
+    width: 100%;
+    background: white;
+    border: 2px solid #E2E8F0;
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+    cursor: pointer;
+    transition: 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+    color: #0F172A;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    border-style: solid;
+}
+
+button.mcq-option:hover:not(:disabled) {
+    transform: translateY(-2px);
+    border-color: #8B5CF6;
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.08);
+}
+
+button.mcq-option.selected {
+    border-color: #8B5CF6;
+    background: #F5F3FF !important;
+}
+
+/* Disabled state when answers are locked */
+button.mcq-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+button.mcq-option:disabled:not(.selected) {
+    background: #F8FAFC;
+    border-color: #E2E8F0;
+    color: #94A3B8;
+}
+
+/* Match the option letter background inside native buttons */
+button.mcq-option .option-letter {
+    background: #F3F4F6;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #6B7280;
+    flex-shrink: 0;
+}
+
+button.mcq-option.selected .option-letter {
+    background: #8B5CF6;
+    color: white;
+}
+
+/* Beautiful results container updated by Ajax */
+#result {
+    margin-top: 24px;
+    padding: 24px;
+    border-radius: 16px;
+    background-color: #FFF;
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+#result h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #F3F4F6;
+    padding-bottom: 8px;
+}
+
+#result p {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #374151;
+}
