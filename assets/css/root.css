@@ -6,6 +6,17 @@
             --bunny-primary-hover: #7C3AED;
             --bunny-secondary: #3B82F6;
             --bunny-accent: #F59E0B;
+            --bunny-primary-light: #eeebff;
+            --bunny-success: #10b981;
+            --bunny-success-light: #ecfdf5;
+            --bunny-warning: #f59e0b;
+            --bunny-warning-light: #fffbeb;
+            --bunny-danger: #ef4444;
+            --bunny-danger-light: #fef2f2;
+            --bunny-dark: #1e293b;
+            --bunny-gray-light: #f8fafc;
+            --bunny-border: #e2e8f0;
+            --bunny-font: 'Plus Jakarta Sans', sans-serif;
             --bg-body: #F3F4F6;
             --bg-card: #FFFFFF;
             --text-main: #111827;
