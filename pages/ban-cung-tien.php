@@ -11,6 +11,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $currentUserId = (int) $_SESSION['user_id'];
 $searchQuery = trim($_GET['q'] ?? '');
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$stats_xp            = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
@@ -105,42 +107,25 @@ function renderBuddyCard(array $user, string $mode, ?int $relationId = null): vo
 <body class="buddies-page">
   <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
 
-  <nav class="navbar-bunny">
-    <div class="d-flex align-items-center gap-3">
-      <button class="menu-btn-mobile" type="button" onclick="toggleSidebar()" aria-label="Mở menu">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-      <a href="trang-chu.php" class="brand-logo"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
-    </div>
-    <form class="search-bar" method="get" action="ban-cung-tien.php">
-      <i class="fa-solid fa-search text-muted"></i>
-      <input type="search" name="q" value="<?= htmlspecialchars($searchQuery) ?>" placeholder="Tìm bạn theo tên, email…" autocomplete="off" />
-    </form>
-    <div class="nav-actions d-flex align-items-center gap-3">
-      <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Thách đấu"><i class="fa-solid fa-khanda"></i></a>
-      <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn"><i class="fa-brands fa-facebook-messenger"></i></a>
-      <a href="trang-ca-nhan.php" class="d-none d-md-block">
-        <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" class="rounded-circle border" width="40" height="40" alt="" />
-      </a>
-    </div>
-  </nav>
+  <nav class="sticky-top" style="z-index: 1030;">
+        <?php include '../includes/header.php'; ?>
+    </nav>
 
   <div class="layout-container">
     <aside class="sidebar-left" id="sidebarLeft">
       <div class="user-mini d-none d-md-flex">
-        <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="" width="44" height="44" />
+        <img src="<?= htmlspecialchars($user_avatar) ?>" alt="" width="44" height="44" />
         <div>
-          <div class="name"><?= htmlspecialchars($currentUser['name']) ?></div>
-          <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($currentUser['xp']) ?> XP</div>
+          <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
+          <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($stats_xp) ?> XP</div>
         </div>
       </div>
       <div class="nav-menu">
-        <a href="trang-chu.php" class="nav-item"><i class="fa-solid fa-house"></i> Bảng tin</a>
-        <a href="ban-cung-tien.php" class="nav-item active"><i class="fa-solid fa-user-group"></i> Bạn cùng tiến</a>
-        <a href="tin-nhan.php" class="nav-item"><i class="fa-brands fa-facebook-messenger"></i> Tin nhắn</a>
-        <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách đấu</a>
-        <a href="trang-ca-nhan.php" class="nav-item"><i class="fa-solid fa-user"></i> Hồ sơ</a>
-      </div>
+                <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
+                <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang thỏ</a>
+                <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-child"></i>Bạn cùng tiến</a>
+                <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
+            </div>
     </aside>
 
     <main class="feed-main">

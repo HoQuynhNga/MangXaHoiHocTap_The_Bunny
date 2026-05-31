@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $currentUserId = (int) $_SESSION['user_id'];
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$stats_xp            = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
@@ -52,16 +54,8 @@ try {
 }
 
 // Sidebar phụ — giữ tĩnh (chỉ tin nhắn lấy từ DB)
-$trendingTags = [
-    ['tag' => '#BabeNobuli_Project', 'count' => '1.2k bài thảo luận', 'anchor' => 'tag-babenobuli'],
-    ['tag' => '#Figma_Design_System', 'count' => '850 tài liệu mới', 'anchor' => 'tag-figma'],
-    ['tag' => '#ĐềThiThử_Lý9', 'count' => '540 lượt thi hôm nay', 'anchor' => 'tag-ly9'],
-];
-$shortcuts = [
-    ['label' => 'Thiết kế UI/UX', 'icon_type' => 'img', 'icon_src' => 'https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg', 'url' => '#'],
-    ['label' => 'Ôn thi Vật Lý 9', 'icon_type' => 'fa', 'icon_fa' => 'fa-atom', 'icon_bg' => 'background:#E0F2FE;color:#0284C7;', 'url' => '#'],
-    ['label' => 'Dự án Babe Nobuli', 'icon_type' => 'fa', 'icon_fa' => 'fa-chart-line', 'icon_bg' => 'background:#FEF3C7;color:#D97706;', 'url' => '#'],
-];
+$trendingTags = [];
+$shortcuts = [];
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -1187,70 +1181,26 @@ a.friend-item:focus-visible {
   <body>
 <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
 
-     <nav class="navbar-bunny">
-      <div class="d-flex align-items-center gap-3">
-        <button class="menu-btn-mobile" type="button" onclick="toggleSidebar()" aria-label="Mở menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <a href="trang-chu.php" class="brand-logo"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
-      </div>
-
-      <div class="search-bar">
-        <i class="fa-solid fa-search text-muted"></i>
-        <input type="search" id="inboxToolbarSearch" placeholder="Tìm trong tin nhắn…" autocomplete="off" enterkeyhint="search" />
-      </div>
-
-      <div class="nav-actions">
-        <a class="btn-icon d-none d-md-flex" id="ung-dung" href="#ung-dung" aria-label="Lưới ứng dụng">
-          <i class="fa-solid fa-border-all"></i>
-        </a>
-     <div class="d-flex align-items-center gap-3">
-            <a href="thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
-                <i class="fa-solid fa-khanda"></i>
-            </a>
-        <a class="btn-icon" href="tin-nhan.php" aria-label="Tin nhắn">
-          <i class="fa-brands fa-facebook-messenger"></i><span class="badge-dot"></span>
-        </a>
-        <a class="btn-icon" id="thong-bao" href="notifications.php" aria-label="Thông báo">
-          <i class="fa-solid fa-bell"></i><span class="badge-dot"></span>
-        </a>
-        <a href="<?= htmlspecialchars($currentUser['profile_url']) ?>" id="ho-so" class="nav-profile-link d-none d-md-flex" aria-label="Hồ sơ của tôi">
-          <img
-            src="<?= htmlspecialchars($currentUser['avatar']) ?>"
-            class="rounded-circle border nav-profile-link__img"
-            width="40"
-            height="40"
-            alt="<?= htmlspecialchars($currentUser['name']) ?>"
-          />
-        </a>
-      </div>
+    <nav class="sticky-top" style="z-index: 1030;">
+        <?php include '../includes/header.php'; ?>
     </nav>
 
     <div class="layout-container">
       <aside class="sidebar-left" id="sidebarLeft">
         <div class="user-mini d-none d-md-flex">
-          <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="<?= htmlspecialchars($currentUser['name']) ?>" width="44" height="44" />
+          <img src="<?= htmlspecialchars($user_avatar) ?>" alt="<?= htmlspecialchars($currentUser['username']) ?>" width="44" height="44" />
           <div>
-            <div class="name"><?= htmlspecialchars($currentUser['name']) ?></div>
-            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($currentUser['xp']) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)</div>
+            <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
+            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($stats_xp) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)</div>
           </div>
         </div>
 
         <div class="nav-menu">
-          <a href="trang-chu.php" class="nav-item"><i class="fa-solid fa-house"></i> Bảng tin</a>
-          <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Bạn cùng tiến</a>
-          <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
-          <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
-          <a href="thach-dau.php" class="nav-item">
-            <i class="fa-solid fa-khanda"></i> Thách Đấu
-            <span class="badge-count" style="background: #ef4444">Mới</span>
-          </a>
-          <a href="#" class="nav-item"><i class="fa-solid fa-calendar-check"></i> Sự Kiện</a>
-          <a href="tin-nhan.php" class="nav-item active">
-            <i class="fa-brands fa-facebook-messenger"></i> Tin nhắn <span class="badge-count" id="sidebarInboxBadge"><?= $inboxThreadCount ?></span>
-          </a>
-          <a href="#" class="nav-item"><i class="fa-solid fa-bookmark"></i> Đã Lưu</a>
-        </div>
+                <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
+                <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang thỏ</a>
+                <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-child"></i>Bạn cùng tiến</a>
+                <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
+            </div>
 
         <hr class="my-3 text-muted opacity-25" />
 

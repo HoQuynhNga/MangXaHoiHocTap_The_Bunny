@@ -299,8 +299,9 @@ $onlineFriends = [];
 
             <div class="nav-menu">
                 <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
-                <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm)</a>
-                <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
+                <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang thỏ</a>
+                <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-child"></i>Bạn cùng tiến</a>
+                <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
             </div>
             
             <hr class="my-3 text-muted opacity-25">
