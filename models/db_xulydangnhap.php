@@ -30,15 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         if (password_verify($password, $user['password_hash'])) {
             // ĐĂNG NHẬP THÀNH CÔNG: Lưu định danh vào Session
             $_SESSION['user_id'] = $user['id'];
-            $updateOnline = $pdo->prepare("
-                UPDATE users
-                SET is_online = 1
-                WHERE id = :id
-            ");
-
-            $updateOnline->execute([
-                'id' => $user['id']
-            ]);
             $_SESSION['username']  = $user['username'];
             $_SESSION['user_type']    = $user['user_type'];
             if ($user['user_type'] === 'quan_tri_vien') {
