@@ -250,18 +250,32 @@ $posts_data = $stmt_posts->fetchAll(PDO::FETCH_ASSOC) ?? [];
 
 
 // ======================================================
-// 6. TRENDING TAGS (TẠM ĐỂ RỖNG)
+// 6. TRENDING TAGS (LẤY TỪ DATABASE)
 // ======================================================
 $trendingTags = [];
-
-
-// ======================================================
-// 7. BẠN ONLINE (LẤY TỪ DATABASE)
-// ======================================================
-$onlineFriends = [];
 try {
-    // Câu lệnh SQL lấy bạn bè đã Accepted và đang có is_online = 1
-    $sql_online_friends = "
+    // Quét bảng hashtag và đếm số lần xuất hiện của hashtag đó trong bảng bai_dang
+    $sql_tags = "
+        SELECT 
+            h.ten_hashtag AS tag,
+            (SELECT COUNT(*) FROM bai_dang b WHERE b.noi_dung LIKE CONCAT('%', h.ten_hashtag, '%')) AS count
+        FROM hashtag h
+        ORDER BY count DESC
+        LIMIT 5
+    ";
+    $stmt_tags = $pdo->query($sql_tags);
+    $trendingTags = $stmt_tags->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    error_log("Lỗi lấy hashtag: " . $e->getMessage());
+}
+
+// ======================================================
+// 7. DANH SÁCH BẠN CÙNG TIẾN (ONLINE & OFFLINE)
+// ======================================================
+$allFriends = [];
+try {
+    // Lấy TẤT CẢ bạn bè đã Accepted, sắp xếp người Online lên đầu
+    $sql_friends = "
         SELECT 
             u.id, 
             u.username AS name, 
@@ -271,27 +285,23 @@ try {
         WHERE (b.user_id = :uid OR b.friend_user_id = :uid)
           AND u.id != :uid
           AND b.status = 'Accepted'
-          AND u.is_online = 1
-        LIMIT 10
+        ORDER BY u.is_online DESC, u.username ASC
     ";
     
-    $stmt_online = $pdo->prepare($sql_online_friends);
-    $stmt_online->execute(['uid' => $current_user_id]);
-    $onlineFriends_raw = $stmt_online->fetchAll(PDO::FETCH_ASSOC);
+    $stmt_friends = $pdo->prepare($sql_friends);
+    $stmt_friends->execute(['uid' => $current_user_id]);
+    $friends_raw = $stmt_friends->fetchAll(PDO::FETCH_ASSOC);
 
-    // Xử lý dữ liệu thô từ DB thành mảng tương thích với giao diện HTML bên dưới
-    foreach ($onlineFriends_raw as $friend) {
-        $onlineFriends[] = [
-            'id'     => $friend['id'],
-            'name'   => $friend['name'],
-            // Do bảng users của bạn chưa thiết kế cột avatar, ta dùng ảnh mặc định
-            'avatar' => '../assets/img/default-avatar.jpg', 
-            'status' => 'online' // Gán cứng là online vì SQL đã lọc is_online = 1
+    foreach ($friends_raw as $friend) {
+        $allFriends[] = [
+            'id'        => $friend['id'],
+            'name'      => $friend['name'],
+            'avatar'    => '../assets/img/default-avatar.jpg',
+            'is_online' => $friend['is_online'] // Trả về 1 (Online) hoặc 0 (Offline)
         ];
     }
 } catch (PDOException $e) {
-    // Ghi log nếu có lỗi để tránh sập trang chủ
-    error_log("Lỗi lấy danh sách bạn online: " . $e->getMessage());
+    error_log("Lỗi lấy danh sách bạn bè: " . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -400,36 +410,59 @@ try {
         <!-- ====== SIDEBAR PHẢI ====== -->
         <aside class="sidebar-right">
             
-            <!-- XU HƯỚNG: tags JOIN post_tags -->
-            <div class="card-bunny p-3 mb-3">
-                <div class="section-title">Xu hướng học tập</div>
-                <?php foreach ($trendingTags as $tag): ?>
-                <div class="trending-tag">
-                    <!-- tags.tag_name -->
-                    <span class="hash"><?= htmlspecialchars($tag['tag']) ?></span>
-                    <!-- COUNT từ post_tags -->
-                    <span class="count"><?= htmlspecialchars($tag['count']) ?></span>
-                </div>
-                <?php endforeach; ?>
+            <!-- XU HƯỚNG HASHTAG -->
+            <div class="card-bunny p-3 mb-4 shadow-sm border-0 rounded-4 bg-white">
+                <div class="section-title fw-bold text-dark mb-3"><i class="fa-solid fa-fire text-danger me-2"></i> Xu hướng học tập</div>
+                
+                <?php if (!empty($trendingTags)): ?>
+                    <?php foreach ($trendingTags as $tag): ?>
+                    <div class="trending-tag d-flex justify-content-between align-items-center mb-2">
+                        <span class="hash text-primary fw-bold">#<?= htmlspecialchars($tag['tag']) ?></span>
+                        <span class="count badge bg-light text-muted border rounded-pill"><?= htmlspecialchars($tag['count']) ?> bài</span>
+                    </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="text-muted small">Chưa có xu hướng hashtag nào.</div>
+                <?php endif; ?>
             </div>
 
-            <!-- BẠN ONLINE: users JOIN user_sessions (presence) -->
-            <div class="section-title ps-2 mb-2">Bạn cùng tiến online</div>
-            <?php foreach ($onlineFriends as $friend): ?>
-            <div class="friend-item">
-                <div class="friend-avatar">
-                    <!-- users.avatar_url -->
-                    <img src="<?= htmlspecialchars($friend['avatar']) ?>"
-                         alt="<?= htmlspecialchars($friend['name']) ?>">
-                    <!-- user_sessions.status: 'online' | 'away' -->
-                    <div class="online-dot <?= $friend['status'] === 'away' ? 'away-dot' : '' ?>"></div>
-                </div>
-                <!-- users.full_name -->
-                <div class="fw-bold small <?= $friend['status'] === 'away' ? 'text-muted' : '' ?>">
-                    <?= htmlspecialchars($friend['name']) ?>
+            <!-- BẠN CÙNG TIẾN (ONLINE & OFFLINE) -->
+            <div class="card-bunny p-3 shadow-sm border-0 rounded-4 bg-white">
+                <div class="section-title fw-bold text-dark mb-3"><i class="fa-solid fa-user-group text-info me-2"></i> Bạn cùng tiến</div>
+                
+                <div class="d-flex flex-column gap-3">
+                    <?php if (!empty($allFriends)): ?>
+                        <?php foreach ($allFriends as $friend): 
+                            // Phân loại CSS theo trạng thái Online / Offline
+                            $dot_color = $friend['is_online'] ? '#10b981' : '#94a3b8'; // Xanh lá hoặc Xám
+                            $text_class = $friend['is_online'] ? 'text-dark' : 'text-muted';
+                            $status_text = $friend['is_online'] ? 'Trực tuyến' : 'Ngoại tuyến';
+                        ?>
+                        <div class="friend-item d-flex align-items-center gap-3">
+                            <div class="friend-avatar position-relative flex-shrink-0">
+                                <img src="<?= htmlspecialchars($friend['avatar']) ?>" alt="Avatar" class="rounded-circle border border-2 shadow-sm" width="45" height="45">
+                                <!-- Dấu chấm trạng thái -->
+                                <span class="position-absolute bottom-0 end-0 border border-2 border-white rounded-circle" style="width: 14px; height: 14px; background-color: <?= $dot_color ?>; transform: translate(2px, -2px);"></span>
+                            </div>
+                            
+                            <div class="w-100 overflow-hidden">
+                                <div class="fw-bold fs-6 text-truncate <?= $text_class ?>">
+                                    <?= htmlspecialchars($friend['name']) ?>
+                                </div>
+                                <div class="fw-medium text-muted" style="font-size: 0.75rem;">
+                                    <?= $status_text ?>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="text-muted small text-center py-3">
+                            <i class="fa-solid fa-user-slash mb-2 fs-3 opacity-50"></i><br>
+                            Bạn chưa kết nối với ai.
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
-            <?php endforeach; ?>
             
         </aside>
 
