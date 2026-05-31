@@ -756,7 +756,7 @@ catch(PDOException $e)
 
 
                                 <option value="1">
-                                    Bộ đề Văn học
+                                    Bộ đề Tin học
                                 </option>
 
 
@@ -779,12 +779,6 @@ catch(PDOException $e)
 
                                 <option value="3">
                                     Bộ đề Tiếng Anh
-                                </option>
-
-
-
-                                <option value="4">
-                                    Bộ đề Tin học (PHP)
                                 </option>
 
 
