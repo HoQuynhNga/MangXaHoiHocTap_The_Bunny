@@ -118,7 +118,7 @@ function adminRenderLayoutStart(string $title, string $activeNav): void
       </nav>
       <div class="admin-sidebar__foot">
         <a href="../trang-chu.php" class="admin-nav__link"><i class="fa-solid fa-arrow-left"></i> Về website</a>
-        <a href="../auth/db_xulydangxuat.php" class="admin-nav__link text-danger"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
+        <a href="../../models/db_xulydangxuat.php" class="admin-nav__link text-danger"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a>
       </div>
     </aside>
     <main class="admin-main">
