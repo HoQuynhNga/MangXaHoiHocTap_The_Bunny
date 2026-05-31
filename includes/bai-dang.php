@@ -3,6 +3,48 @@
  * Tệp tin: includes/bai-dang.php
  * Chức năng: Hiển thị giao diện Form đăng bài và danh sách bài viết
  */
+// ---------------------------------------------------------
+// VÙNG XỬ LÝ DỮ LIỆU TỪ FORM (BACKEND CODE ĐẶT TẠI ĐÂY)
+// ---------------------------------------------------------
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'report_post') {
+    
+    // Kiểm tra CSRF Token
+    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+        die("Lỗi bảo mật: CSRF Token không hợp lệ hoặc đã hết hạn!");
+    }
+
+    $nguoi_bao_cao_id   = $_SESSION['user_id'] ?? 0; 
+    $bai_dang_id        = filter_input(INPUT_POST, 'bai_dang_id', FILTER_VALIDATE_INT);
+    $nguoi_bi_bao_cao_id = filter_input(INPUT_POST, 'nguoi_bi_bao_cao_id', FILTER_VALIDATE_INT);
+    $ly_do              = trim($_POST['ly_do'] ?? '');
+
+    if ($nguoi_bao_cao_id > 0 && $bai_dang_id && $nguoi_bi_bao_cao_id && !empty($ly_do)) {
+        try {
+            $sql_report = "
+                INSERT INTO bao_cao_vi_pham (nguoi_bao_cao_id, bai_dang_id, nguoi_bi_bao_cao_id, ly_do) 
+                VALUES (:nguoi_bao_cao_id, :bai_dang_id, :nguoi_bi_bao_cao_id, :ly_do)
+            ";
+            
+            $stmt_report = $pdo->prepare($sql_report);
+            $stmt_report->execute([
+                ':nguoi_bao_cao_id'   => $nguoi_bao_cao_id,
+                ':bai_dang_id'        => $bai_dang_id,
+                ':nguoi_bi_bao_cao_id' => $nguoi_bi_bao_cao_id,
+                ':ly_do'              => htmlspecialchars($ly_do)
+            ]);
+
+            // Hiển thị thông báo và tải lại trang để tránh gửi lại form khi nhấn F5
+            echo "<script>alert('Hệ thống đã ghi nhận báo cáo của bạn. Quản trị viên sẽ xem xét sớm nhất!'); window.location.href = window.location.href;</script>";
+            exit;
+
+        } catch (PDOException $e) {
+            error_log("Lỗi DB khi báo cáo bài viết: " . $e->getMessage());
+            echo "<script>alert('Đã xảy ra sự cố từ máy chủ. Vui lòng thử lại sau!');</script>";
+        }
+    } else {
+        echo "<script>alert('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại!');</script>";
+    }
+}
 ?>
 
 <!-- Form đăng bài mới -->
@@ -73,9 +115,21 @@
                     </div>
                 </div>
                 
-                <button class="btn btn-light rounded-circle text-muted shadow-sm" style="width:40px; height:40px;" aria-label="Hiện menu Tùy chọn chức năng">
+                <!-- Bắt đầu nút Tùy chọn (Dropdown) -->
+            <div class="dropdown">
+                 <button class="btn btn-light rounded-circle text-muted shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width:40px; height:40px;" aria-label="Hiện menu Tùy chọn chức năng">
                     <i class="fa-solid fa-ellipsis"></i>
                 </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                 <li>
+                    <!-- Nút gọi Modal báo cáo -->
+                    <button class="dropdown-item text-danger fw-medium d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#reportModal-<?= $post['post_id']; ?>">
+                    <i class="fa-solid fa-flag"></i> Báo cáo vi phạm
+                    </button>
+                </li>
+                </ul>
+                </div>
+                <!-- Kết thúc nút Tùy chọn -->
             </header>
             
             <div class="post-content mt-3">
@@ -135,6 +189,45 @@
                         <span class="fw-bold">Chia sẻ</span>
                     </button>
                 </div>
+                <!-- VÙNG MODAL BÁO CÁO VI PHẠM -->
+<div class="modal fade" id="reportModal-<?= $post['post_id']; ?>" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form method="POST" action="">
+                <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
+                    <h5 class="modal-title fw-bold text-danger">
+                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Báo cáo bài viết
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-4">
+                    <!-- Các dữ liệu ngầm gửi về Server -->
+                    <input type="hidden" name="action" value="report_post">
+                    <input type="hidden" name="bai_dang_id" value="<?= $post['post_id']; ?>">
+                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                    
+                    <!-- Lưu ý: Bạn cần đảm bảo câu truy vấn lấy $posts_data có lấy kèm ID của người đăng để điền vào nguoi_bi_bao_cao_id -->
+                    <input type="hidden" name="nguoi_bi_bao_cao_id" value="<?= $post['user_id']; ?>"> 
+                    <p class="text-muted mb-2 fw-medium">Vui lòng mô tả chi tiết lý do bạn báo cáo bài viết này:</p>
+                    <textarea 
+                        class="form-control bg-light border-secondary-subtle rounded-3 p-3" 
+                        name="ly_do" 
+                        rows="4" 
+                        placeholder="Nội dung này vi phạm tiêu chuẩn cộng đồng vì..." 
+                        required
+                    ></textarea>
+                </div>
+                
+                <div class="modal-footer border-top-0 px-4 pb-4">
+                    <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger fw-bold px-4 rounded-pill shadow">Gửi báo cáo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- END MODAL BÁO CÁO -->
 
             </div>
         </footer>

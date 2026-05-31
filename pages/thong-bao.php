@@ -41,6 +41,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $current_user_id = $_SESSION['user_id'];
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$stats_xp            = 0;
 
 try {
 
@@ -306,12 +308,12 @@ function timeAgo($datetime)
 </head>
 
 <body>
+<nav class="sticky-top" style="z-index: 1030;">
+        <?php include '../includes/header.php'; ?>
+</nav>
 
 <div class="container notification-wrapper">
 
-    <h3 class="fw-bold mb-4">
-        🔔 Thông báo
-    </h3>
 
     <?php if (!empty($notifications)): ?>
 
