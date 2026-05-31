@@ -3,6 +3,19 @@
  * Tệp tin: includes/bai-dang.php
  * Chức năng: Hiển thị giao diện Form đăng bài và danh sách bài viết
  */
+
+// ---------------------------------------------------------
+// VÙNG TRUY VẤN LẤY DANH SÁCH HASHTAG TỪ DB
+// ---------------------------------------------------------
+try {
+    $sql_hashtags = "SELECT id, ten_hashtag FROM hashtag ORDER BY ten_hashtag ASC";
+    $stmt_tags = $pdo->prepare($sql_hashtags);
+    $stmt_tags->execute();
+    $hashtags_list = $stmt_tags->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+    $hashtags_list = []; // Fallback nếu lỗi
+}
+
 // ---------------------------------------------------------
 // VÙNG XỬ LÝ DỮ LIỆU TỪ FORM (BACKEND CODE ĐẶT TẠI ĐÂY)
 // ---------------------------------------------------------
@@ -50,21 +63,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <!-- Form đăng bài mới -->
 <div class="card shadow-sm border-0 mb-4 rounded-4 bg-white">
     <div class="card-body p-4">
-        <form method="POST" action="">
+        <!-- Chú ý: Thêm onsubmit để kích hoạt JS ghép hashtag trước khi gửi đi -->
+        <form method="POST" action="" onsubmit="return appendHashtagToPost(this)">
             <input type="hidden" name="action" value="add_post">
             <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
             
             <div class="d-flex gap-3">
                 <img src="<?= htmlspecialchars($user_avatar); ?>" class="rounded-circle border border-2 border-light shadow-sm" width="55" height="55" style="object-fit: cover;" alt="Ảnh bạn">
                 
-                <textarea 
-                    class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6" 
-                    name="noidung_post" 
-                    rows="3" 
-                    placeholder="Bạn muốn đăng tải nội dung học thuật gì lên mạng xã hội hôm nay?..." 
-                    required 
-                    style="resize: none;"
-                ></textarea>
+                <div class="w-100">
+                    <textarea 
+                        class="form-control border-secondary-subtle bg-light rounded-4 p-3 fs-6 mb-2" 
+                        name="noidung_post" 
+                        id="noidung_post_id"
+                        rows="3" 
+                        placeholder="Bạn muốn đăng tải nội dung học thuật gì lên mạng xã hội hôm nay?..." 
+                        required 
+                        style="resize: none;"
+                    ></textarea>
+                    
+                    <!-- Khối chọn Hashtag đổ dữ liệu từ DB -->
+                    <select id="hashtag_select" class="form-select form-select-sm border-secondary-subtle text-primary fw-bold w-auto d-inline-block shadow-sm rounded-pill px-3">
+                        <option value="">+ Gắn Hashtag (Tùy chọn)</option>
+                        <?php if(!empty($hashtags_list)): ?>
+                            <?php foreach($hashtags_list as $tag): ?>
+                                <option value="#<?= htmlspecialchars($tag['ten_hashtag']); ?>">
+                                    #<?= htmlspecialchars($tag['ten_hashtag']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
             </div>
             
             <hr class="text-muted border-dashed my-4 opacity-25">
@@ -86,6 +115,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         </form>
     </div>
 </div>
+
+<!-- CẦN THIẾT: Script nối Hashtag vào Nội dung bài đăng -->
+<script>
+function appendHashtagToPost(formElement) {
+    var contentBox = formElement.querySelector('#noidung_post_id');
+    var hashtagBox = formElement.querySelector('#hashtag_select');
+    
+    // Nếu người dùng có chọn 1 hashtag, tự động nối xuống cuối bài viết
+    if (hashtagBox && hashtagBox.value !== '') {
+        contentBox.value = contentBox.value + '\n\n' + hashtagBox.value;
+    }
+    
+    return true; // Cho phép form tiếp tục Submit gửi đi
+}
+</script>
 
 <!-- Danh sách bài đăng -->
 <?php if (count($posts_data) > 0): ?>
@@ -116,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 </div>
                 
                 <!-- Bắt đầu nút Tùy chọn (Dropdown) -->
-            <div class="dropdown">
+                <div class="dropdown">
                  <button class="btn btn-light rounded-circle text-muted shadow-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width:40px; height:40px;" aria-label="Hiện menu Tùy chọn chức năng">
                     <i class="fa-solid fa-ellipsis"></i>
                 </button>
@@ -133,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </header>
             
             <div class="post-content mt-3">
+                <!-- Đoạn hashtag sẽ tự động hiện ra ở đây do đã được ghép nối bằng JS trước khi lưu -->
                 <p class="m-0 fs-5 text-dark" style="line-height: 1.8; white-space: pre-line;">
                     <?= htmlspecialchars($post['noi_dung']); ?>
                 </p>
@@ -189,48 +234,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                         <span class="fw-bold">Chia sẻ</span>
                     </button>
                 </div>
-                <!-- VÙNG MODAL BÁO CÁO VI PHẠM -->
-<div class="modal fade" id="reportModal-<?= $post['post_id']; ?>" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg rounded-4">
-            <form method="POST" action="">
-                <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
-                    <h5 class="modal-title fw-bold text-danger">
-                        <i class="fa-solid fa-triangle-exclamation me-2"></i>Báo cáo bài viết
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                
-                <div class="modal-body p-4">
-                    <!-- Các dữ liệu ngầm gửi về Server -->
-                    <input type="hidden" name="action" value="report_post">
-                    <input type="hidden" name="bai_dang_id" value="<?= $post['post_id']; ?>">
-                    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
-                    
-                    <!-- Lưu ý: Bạn cần đảm bảo câu truy vấn lấy $posts_data có lấy kèm ID của người đăng để điền vào nguoi_bi_bao_cao_id -->
-                    <input type="hidden" name="nguoi_bi_bao_cao_id" value="<?= $post['user_id']; ?>"> 
-                    <p class="text-muted mb-2 fw-medium">Vui lòng mô tả chi tiết lý do bạn báo cáo bài viết này:</p>
-                    <textarea 
-                        class="form-control bg-light border-secondary-subtle rounded-3 p-3" 
-                        name="ly_do" 
-                        rows="4" 
-                        placeholder="Nội dung này vi phạm tiêu chuẩn cộng đồng vì..." 
-                        required
-                    ></textarea>
-                </div>
-                
-                <div class="modal-footer border-top-0 px-4 pb-4">
-                    <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger fw-bold px-4 rounded-pill shadow">Gửi báo cáo</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-<!-- END MODAL BÁO CÁO -->
-
             </div>
         </footer>
+
+        <!-- VÙNG MODAL BÁO CÁO VI PHẠM -->
+        <div class="modal fade" id="reportModal-<?= $post['post_id']; ?>" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg rounded-4">
+                    <form method="POST" action="">
+                        <div class="modal-header border-bottom-0 pb-0 px-4 pt-4">
+                            <h5 class="modal-title fw-bold text-danger">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>Báo cáo bài viết
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        
+                        <div class="modal-body p-4">
+                            <input type="hidden" name="action" value="report_post">
+                            <input type="hidden" name="bai_dang_id" value="<?= $post['post_id']; ?>">
+                            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token); ?>">
+                            <input type="hidden" name="nguoi_bi_bao_cao_id" value="<?= $post['user_id']; ?>"> 
+                            <p class="text-muted mb-2 fw-medium">Vui lòng mô tả chi tiết lý do bạn báo cáo bài viết này:</p>
+                            <textarea 
+                                class="form-control bg-light border-secondary-subtle rounded-3 p-3" 
+                                name="ly_do" 
+                                rows="4" 
+                                placeholder="Nội dung này vi phạm tiêu chuẩn cộng đồng vì..." 
+                                required
+                            ></textarea>
+                        </div>
+                        
+                        <div class="modal-footer border-top-0 px-4 pb-4">
+                            <button type="button" class="btn btn-light fw-bold px-4 rounded-pill" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-danger fw-bold px-4 rounded-pill shadow">Gửi báo cáo</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- END MODAL BÁO CÁO -->
 
         <!-- Vùng bình luận -->
         <div class="collapse" id="collapseComments-<?= $post['post_id']; ?>">
@@ -309,11 +351,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     <!-- Khung Input chứa Link -->
                     <div class="input-group mb-4 shadow-sm rounded-3 overflow-hidden border border-secondary-subtle">
                         <?php 
-                            // URL trỏ về bài viết đó
                             $share_link = "http://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/chi-tiet-bai-dang.php?id=" . $post['post_id'];
-                            ?>
+                        ?>
                         <input type="text" class="form-control bg-light border-0 py-2 text-muted" id="linkPost-<?= $post['post_id']; ?>" value="<?= htmlspecialchars($share_link); ?>" readonly>
                         <button class="btn btn-primary fw-bold px-4" type="button" onclick="copyPostLink('linkPost-<?= $post['post_id']; ?>', <?= $post['post_id']; ?>, '<?= htmlspecialchars($csrf_token); ?>')">
+                            <i class="fa-regular fa-copy"></i>
+                        </button>
                     </div>
                     
                     <hr class="border-light">
@@ -349,28 +392,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <script>
 function copyPostLink(inputId, postId, csrfToken) {
     var copyText = document.getElementById(inputId);
-    // Chọn và copy văn bản
     copyText.select();
     copyText.setSelectionRange(0, 99999);
     
     navigator.clipboard.writeText(copyText.value).then(function() {
         alert("Đã sao chép liên kết vào bộ nhớ tạm!");
         
-        // --- PHẦN AJAX THÊM MỚI: BẮN TÍN HIỆU NGẦM VỀ DATABASE ---
-        
-        // Đóng gói dữ liệu y hệt như một cái Form POST
         let formData = new FormData();
         formData.append('action', 'share_post');
         formData.append('post_id', postId);
         formData.append('csrf_token', csrfToken);
 
-        // Gửi ngầm không làm load lại trang
         fetch('', { 
             method: 'POST',
             body: formData
         }).then(response => {
-            console.log("Hệ thống đã ghi nhận 1 lượt chia sẻ mới từ hành vi Copy Link!");
-            // Nếu muốn xịn hơn, bạn có thể dùng JS để tự động +1 vào con số hiển thị trên giao diện tại đây
+            console.log("Hệ thống đã ghi nhận 1 lượt chia sẻ mới!");
         }).catch(error => {
             console.error("Lỗi tracking chia sẻ:", error);
         });

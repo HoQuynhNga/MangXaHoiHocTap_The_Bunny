@@ -256,11 +256,44 @@ $trendingTags = [];
 
 
 // ======================================================
-// 7. BẠN ONLINE (TẠM ĐỂ RỖNG)
+// 7. BẠN ONLINE (LẤY TỪ DATABASE)
 // ======================================================
 $onlineFriends = [];
+try {
+    // Câu lệnh SQL lấy bạn bè đã Accepted và đang có is_online = 1
+    $sql_online_friends = "
+        SELECT 
+            u.id, 
+            u.username AS name, 
+            u.is_online
+        FROM ban_cung_tien b
+        INNER JOIN users u ON (b.user_id = u.id OR b.friend_user_id = u.id)
+        WHERE (b.user_id = :uid OR b.friend_user_id = :uid)
+          AND u.id != :uid
+          AND b.status = 'Accepted'
+          AND u.is_online = 1
+        LIMIT 10
+    ";
+    
+    $stmt_online = $pdo->prepare($sql_online_friends);
+    $stmt_online->execute(['uid' => $current_user_id]);
+    $onlineFriends_raw = $stmt_online->fetchAll(PDO::FETCH_ASSOC);
+
+    // Xử lý dữ liệu thô từ DB thành mảng tương thích với giao diện HTML bên dưới
+    foreach ($onlineFriends_raw as $friend) {
+        $onlineFriends[] = [
+            'id'     => $friend['id'],
+            'name'   => $friend['name'],
+            // Do bảng users của bạn chưa thiết kế cột avatar, ta dùng ảnh mặc định
+            'avatar' => '../assets/img/default-avatar.jpg', 
+            'status' => 'online' // Gán cứng là online vì SQL đã lọc is_online = 1
+        ];
+    }
+} catch (PDOException $e) {
+    // Ghi log nếu có lỗi để tránh sập trang chủ
+    error_log("Lỗi lấy danh sách bạn online: " . $e->getMessage());
+}
 ?>
-```
 <!DOCTYPE html>
 <html lang="vi">
 <head>
