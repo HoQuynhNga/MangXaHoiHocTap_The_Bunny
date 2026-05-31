@@ -2,11 +2,38 @@
 session_start();
 
 // ======================================================
-// 1. KẾT NỐI DATABASE
+// KẾT NỐI DATABASE
 // ======================================================
 require_once '../config/config.php'; 
+
+// =====================================================================================
+// THIẾT LẬP KẾT NỐI ĐẾN CƠ SỞ DỮ LIỆU (PDO MYSQL)
+// =====================================================================================
+
+try {
+    // [GIẢI THÍCH PHP]: DSN (Data Source Name) là chuỗi chứa thông tin host, tên DB và bộ mã.
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
+    
+    // Cấu hình các đặc tính vận hành cho PDO
+    $options = [
+        // Bắt lỗi dưới dạng Ngoại lệ (Exception) để dễ dàng bắt bằng try-catch
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
+        // Trả về dữ liệu dạng mảng có key là tên cột (Associative Array)
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       
+        // Vô hiệu hóa giả lập prepare để chống SQL Injection sâu từ lõi
+        PDO::ATTR_EMULATE_PREPARES   => false,                  
+    ];
+    
+    // Mở kết nối
+    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+    
+} catch (PDOException $e) {
+    // Nếu sai mật khẩu hoặc sập Database, dừng load trang và báo lỗi
+    die("Hệ thống gián đoạn. Không thể kết nối cơ sở dữ liệu: " . $e->getMessage());
+}
+
 // =========================================================================================
-// PHẦN 1: ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH XỬ LÝ NGHIỆP VỤ & BẢO MẬT
+// ĐỊNH NGHĨA CÁC HÀM TIỆN ÍCH XỬ LÝ NGHIỆP VỤ & BẢO MẬT
 // =========================================================================================
 
 /**
@@ -96,83 +123,68 @@ if (empty($_SESSION['csrf_token'])) {
 $csrf_token = $_SESSION['csrf_token'];
 
 // =====================================================================================
-// PHẦN 2: KHỞI TẠO BIẾN TRỐNG
+// KHỞI TẠO BIẾN TRỐNG
 // =====================================================================================
 
-$page_title          = "Trang cá nhân";
+$page_title = "Trang chủ";
 
-// Các biến lưu thông tin cơ bản định danh từ bảng `users`
-$user_name           = "";
-$user_type           = "";
-$truong_hoc          = "";
-$truong_dai_hoc      = "";
-$is_verified         = false; // Cờ kiểm tra tài khoản đã xác thực chưa
+// Thông tin user
+$user_name         = "Người dùng";
+$user_type         = "";
+$truong_hoc        = "";
+$truong_dai_hoc    = "";
+$is_verified       = false;
 
-// Biến thông tin mở rộng từ bảng `ho_so_ca_nhan`
-$thong_tin_dinh_danh = "";
+// Ảnh mặc định
+$user_avatar = "../assets/img/default-avatar.jpg";
+$user_cover  = "../assets/img/default-cover.jpg";
 
-// Do CSDL chưa thiết kế không có cột upload ảnh, ta gán ảnh dự phòng (Fallback Image)
-$user_avatar         = "../assets/img/default-avatar.jpg";
-$user_cover          = "../assets/img/default-cover.jpg";
+// Thống kê
+$stats_xp       = 0;
+$stats_buddies  = 0;
+$stats_docs     = 0;
 
-// Khởi tạo các biến chứa dữ liệu số đếm bằng 0
-$stats_xp            = 0;
-$stats_buddies       = 0;
-$stats_docs          = 0;
-
-// Biến lưu trữ văn bản thông báo trả về (Alert)
-$message_notify      = ""; 
-// Biến xác định màu cảnh báo của Bootstrap (success: xanh, danger: đỏ, warning: vàng)
-$message_type        = "success"; 
-
-// [LƯU Ý PHP]: Lấy ID người dùng từ Session. Nếu chưa có chức năng đăng nhập,
-// tạm thời hard-code là 1 (Tài khoản Admin đầu tiên) để có dữ liệu Test.
-// ID của người đang đăng nhập (Bạn)
-$current_user_id = $_SESSION['user_id'] ?? 1; 
-// Lấy ID của chủ nhân trang cá nhân (Lấy từ URL, nếu không có thì mặc định là nhà của bạn)
-$profile_id = isset($_GET['id']) ? (int)$_GET['id'] : $current_user_id;
-
-// Khởi tạo mảng rỗng để hứng dữ liệu từ CSDL, tránh văng lỗi nếu DB trống
-$posts_data          = [];
-$buddies_data        = [];
-$docs_data           = [];
-$events_data         = [];
+// Alert
+$message_notify = "";
+$message_type   = "success";
 
 // =====================================================================================
-// PHẦN 3: THIẾT LẬP KẾT NỐI ĐẾN CƠ SỞ DỮ LIỆU (PDO MYSQL)
+// USER ĐĂNG NHẬP
+// =====================================================================================
+
+// Nếu chưa có login thì test user ID = 1
+$current_user_id = $_SESSION['user_id'] ?? 1;
+
+// =====================================================================================
+// LẤY THÔNG TIN USER TỪ DATABASE
 // =====================================================================================
 
 try {
-    // [GIẢI THÍCH PHP]: DSN (Data Source Name) là chuỗi chứa thông tin host, tên DB và bộ mã.
-    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
-    
-    // Cấu hình các đặc tính vận hành cho PDO
-    $options = [
-        // Bắt lỗi dưới dạng Ngoại lệ (Exception) để dễ dàng bắt bằng try-catch
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, 
-        // Trả về dữ liệu dạng mảng có key là tên cột (Associative Array)
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       
-        // Vô hiệu hóa giả lập prepare để chống SQL Injection sâu từ lõi
-        PDO::ATTR_EMULATE_PREPARES   => false,                  
-    ];
-    
-    // Mở kết nối
-    $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
-    
+
+    $sql = "SELECT * FROM users WHERE id = ?";
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$current_user_id]);
+
+    $row_profile = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($row_profile) {
+
+        $user_name      = $row_profile['username'] ?? 'Người dùng';
+        $user_type      = $row_profile['user_type'] ?? '';
+        $truong_hoc     = $row_profile['truong_hoc'] ?? '';
+        $truong_dai_hoc = $row_profile['truong_dai_hoc'] ?? '';
+
+        // Nếu có giấy tờ chứng minh thì xem như verified
+        $is_verified = !empty($row_profile['giay_to_chung_minh']);
+    }
+
 } catch (PDOException $e) {
-    // Nếu sai mật khẩu hoặc sập Database, dừng load trang và báo lỗi
-    die("Hệ thống gián đoạn. Không thể kết nối cơ sở dữ liệu: " . $e->getMessage());
+
+    $message_notify = "Lỗi tải thông tin người dùng!";
+    $message_type = "danger";
 }
 
-
-// ======================================================
-// 4. CSRF TOKEN
-// ======================================================
-if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-}
-
-$csrf_token = $_SESSION['csrf_token'];
 // ======================================================
 // Lấy username
 // ======================================================
@@ -184,7 +196,7 @@ $sql_profile = "
     WHERE u.id = :id
 ";
 // ======================================================
-// 5. LẤY DANH SÁCH TẤT CẢ BÀI ĐĂNG TRANG CHỦ
+// LẤY DANH SÁCH TẤT CẢ BÀI ĐĂNG TRANG CHỦ
 // ======================================================
 $sql_posts = "
     SELECT 
@@ -280,7 +292,7 @@ $onlineFriends = [];
                 >
             <div>
                 <div class="name">
-                    <?= htmlspecialchars($row_profile['username'] ?? 'Người dùng') ?>
+                    <?= htmlspecialchars($user_name) ?>
                 </div>
             </div>
 </div>
