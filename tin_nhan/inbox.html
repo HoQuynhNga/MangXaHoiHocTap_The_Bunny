@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tin nhắn — The Bunny</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="inbox.css" />
+  </head>
+  <body>
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>
+
+    <nav class="navbar-bunny">
+      <div class="d-flex align-items-center gap-3">
+        <button class="menu-btn-mobile" type="button" onclick="toggleSidebar()" aria-label="Mở menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <a href="MXH.html" class="brand-logo"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
+      </div>
+
+      <div class="search-bar">
+        <i class="fa-solid fa-search text-muted"></i>
+        <input type="search" id="inboxToolbarSearch" placeholder="Tìm trong tin nhắn…" autocomplete="off" enterkeyhint="search" />
+      </div>
+
+      <div class="nav-actions">
+        <a class="btn-icon d-none d-md-flex" id="ung-dung" href="#ung-dung" aria-label="Lưới ứng dụng">
+          <i class="fa-solid fa-border-all"></i>
+        </a>
+        <a class="btn-icon" href="inbox.html" aria-label="Tin nhắn">
+          <i class="fa-brands fa-facebook-messenger"></i><span class="badge-dot"></span>
+        </a>
+        <a class="btn-icon" id="thong-bao" href="#thong-bao" aria-label="Thông báo">
+          <i class="fa-solid fa-bell"></i><span class="badge-dot"></span>
+        </a>
+        <a href="#ho-so" id="ho-so" class="nav-profile-link d-none d-md-flex" aria-label="Hồ sơ của tôi">
+          <img
+            src="https://i.pravatar.cc/150?img=12"
+            class="rounded-circle border nav-profile-link__img"
+            width="40"
+            height="40"
+            alt=""
+          />
+        </a>
+      </div>
+    </nav>
+
+    <div class="layout-container">
+      <aside class="sidebar-left" id="sidebarLeft">
+        <div class="user-mini d-none d-md-flex">
+          <img src="https://i.pravatar.cc/150?img=12" alt="User" width="44" height="44" />
+          <div>
+            <div class="name">Alex Nguyễn</div>
+            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> 1,520 XP (Top 5%)</div>
+          </div>
+        </div>
+
+        <div class="nav-menu">
+          <a href="MXH.html" class="nav-item"><i class="fa-solid fa-house"></i> Bảng tin</a>
+          <a href="#" class="nav-item">
+            <i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm) <span class="badge-count">3</span>
+          </a>
+          <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
+          <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
+          <a href="#" class="nav-item">
+            <i class="fa-solid fa-khanda"></i> Thách Đấu
+            <span class="badge-count" style="background: #ef4444">Mới</span>
+          </a>
+          <a href="#" class="nav-item"><i class="fa-solid fa-calendar-check"></i> Sự Kiện</a>
+          <a href="inbox.html" class="nav-item active">
+            <i class="fa-brands fa-facebook-messenger"></i> Tin nhắn <span class="badge-count" id="sidebarInboxBadge">5</span>
+          </a>
+          <a href="#" class="nav-item"><i class="fa-solid fa-bookmark"></i> Đã Lưu</a>
+        </div>
+
+        <hr class="my-3 text-muted opacity-25" />
+
+        <h6 class="text-muted fw-bold small ms-3 mb-3 text-uppercase">Lối tắt của bạn</h6>
+        <div class="nav-menu">
+          <a href="#" class="nav-item py-2">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/3/33/Figma-logo.svg" width="24" class="rounded" alt="" />
+            Thiết kế UI/UX
+          </a>
+          <a href="#" class="nav-item py-2">
+            <div class="btn-icon" style="width: 24px; height: 24px; background: #e0f2fe; color: #0284c7">
+              <i class="fa-solid fa-atom fs-6"></i>
+            </div>
+            Ôn thi Vật Lý 9
+          </a>
+          <a href="#" class="nav-item py-2">
+            <div class="btn-icon" style="width: 24px; height: 24px; background: #fef3c7; color: #d97706">
+              <i class="fa-solid fa-chart-line fs-6"></i>
+            </div>
+            Dự án Babe Nobuli
+          </a>
+        </div>
+      </aside>
+
+      <main class="feed-main feed-main--inbox">
+        <div class="card-bunny inbox-card p-0 overflow-hidden mb-0">
+          <div class="inbox-panel">
+            <div class="inbox-panel__list">
+              <div class="inbox-panel__head">
+                <span class="inbox-panel__title">Hộp thư đến <span class="inbox-panel__count" id="inboxThreadCount">(5)</span></span>
+              </div>
+              <div class="inbox-panel__items" role="listbox" aria-label="Danh sách cuộc trò chuyện">
+                <button
+                  type="button"
+                  class="msg-row"
+                  role="option"
+                  data-chat-id="meagan"
+                  aria-selected="false"
+                >
+                  <img
+                    class="msg-row__avatar"
+                    src="https://i.pravatar.cc/150?img=32"
+                    width="40"
+                    height="40"
+                    alt=""
+                  />
+                  <span class="msg-row__body">
+                    <span class="msg-row__name">Meagan McLaughlin</span>
+                    <span class="msg-row__preview">This is a sample massage!</span>
+                    <span class="msg-row__time">2 giờ trước</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="msg-row"
+                  role="option"
+                  data-chat-id="reba"
+                  aria-selected="false"
+                >
+                  <img
+                    class="msg-row__avatar"
+                    src="https://i.pravatar.cc/150?img=45"
+                    width="40"
+                    height="40"
+                    alt=""
+                  />
+                  <span class="msg-row__body">
+                    <span class="msg-row__name">Reba Reynolds</span>
+                    <span class="msg-row__preview msg-row__preview--you">
+                      <span class="msg-row__you-label">Bạn:</span> Hi
+                    </span>
+                    <span class="msg-row__time">2 giờ trước</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="msg-row"
+                  role="option"
+                  data-chat-id="hoang-oanh"
+                  aria-selected="false"
+                >
+                  <img
+                    class="msg-row__avatar"
+                    src="https://i.pravatar.cc/150?img=9"
+                    width="40"
+                    height="40"
+                    alt=""
+                  />
+                  <span class="msg-row__body">
+                    <span class="msg-row__name">Hoàng Oanh</span>
+                    <span class="msg-row__preview">Nhóm mình học 8h tối nhé!</span>
+                    <span class="msg-row__time">Hôm qua</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="msg-row"
+                  role="option"
+                  data-chat-id="tran-phong"
+                  aria-selected="false"
+                >
+                  <img
+                    class="msg-row__avatar"
+                    src="https://i.pravatar.cc/150?img=11"
+                    width="40"
+                    height="40"
+                    alt=""
+                  />
+                  <span class="msg-row__body">
+                    <span class="msg-row__name">Trần Phong</span>
+                    <span class="msg-row__preview msg-row__preview--you">
+                      <span class="msg-row__you-label">Bạn:</span> Ok nhé
+                    </span>
+                    <span class="msg-row__time">3 ngày trước</span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  class="msg-row"
+                  role="option"
+                  data-chat-id="chi-le"
+                  aria-selected="false"
+                >
+                  <img
+                    class="msg-row__avatar"
+                    src="https://i.pravatar.cc/150?img=4"
+                    width="40"
+                    height="40"
+                    alt=""
+                  />
+                  <span class="msg-row__body">
+                    <span class="msg-row__name">Chi Lê</span>
+                    <span class="msg-row__preview">Flashcard Lý gửi bạn nè</span>
+                    <span class="msg-row__time">Tuần trước</span>
+                  </span>
+                </button>
+              </div>
+            </div>
+            <div class="inbox-panel__empty" id="inboxPlaceholder" aria-hidden="false">
+              <div class="inbox-panel__envelope">
+                <i class="fa-regular fa-envelope"></i>
+              </div>
+              <p class="inbox-panel__hint">Chọn một cuộc trò chuyện để xem chi tiết</p>
+            </div>
+            <div class="inbox-panel__conversation" id="inboxConversation" hidden>
+              <div class="inbox-chat__toolbar">
+                <button type="button" class="inbox-chat__back" id="inboxChatBack" aria-label="Quay lại danh sách">
+                  <i class="fa-solid fa-arrow-left"></i>
+                </button>
+                <img class="inbox-chat__avatar" id="inboxChatHeaderAvatar" src="" width="40" height="40" alt="" />
+                <div class="inbox-chat__meta">
+                  <div class="inbox-chat__name" id="inboxChatHeaderName"></div>
+                  <div class="inbox-chat__status">Đang hoạt động</div>
+                </div>
+              </div>
+              <div class="inbox-chat__messages" id="inboxChatMessages" tabindex="-1"></div>
+              <form class="inbox-chat__composer" id="inboxChatForm" autocomplete="off">
+                <label class="visually-hidden" for="inboxChatInput">Nội dung tin nhắn</label>
+                <textarea
+                  id="inboxChatInput"
+                  class="inbox-chat__input"
+                  rows="1"
+                  placeholder="Nhập tin nhắn…"
+                ></textarea>
+                <button type="button" class="inbox-chat__send" id="inboxChatSend">
+                  <i class="fa-solid fa-paper-plane"></i><span>Gửi</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <aside class="sidebar-right">
+        <div class="card-bunny p-3 mb-3">
+          <div class="section-title">Xu hướng học tập</div>
+          <a href="#tag-babenobuli" id="tag-babenobuli" class="trending-tag">
+            <span class="hash">#BabeNobuli_Project</span>
+            <span class="count">1.2k bài thảo luận</span>
+          </a>
+          <a href="#tag-figma" id="tag-figma" class="trending-tag">
+            <span class="hash">#Figma_Design_System</span>
+            <span class="count">850 tài liệu mới</span>
+          </a>
+          <a href="#tag-ly9" id="tag-ly9" class="trending-tag">
+            <span class="hash">#ĐềThiThử_Lý9</span>
+            <span class="count">540 lượt thi hôm nay</span>
+          </a>
+        </div>
+
+        <div class="section-title ps-2 mb-2">Bạn cùng tiến online</div>
+        <a href="#chat-hoang-oanh" id="chat-hoang-oanh" class="friend-item" data-open-chat="hoang-oanh">
+          <div class="friend-avatar"><img src="https://i.pravatar.cc/150?img=9" alt="" /><div class="online-dot"></div></div>
+          <span class="fw-bold small">Hoàng Oanh</span>
+        </a>
+        <a href="#chat-tran-phong" id="chat-tran-phong" class="friend-item" data-open-chat="tran-phong">
+          <div class="friend-avatar"><img src="https://i.pravatar.cc/150?img=11" alt="" /><div class="online-dot away-dot"></div></div>
+          <span class="fw-bold small text-muted">Trần Phong</span>
+        </a>
+        <a href="#chat-chi-le" id="chat-chi-le" class="friend-item" data-open-chat="chi-le">
+          <div class="friend-avatar"><img src="https://i.pravatar.cc/150?img=4" alt="" /><div class="online-dot"></div></div>
+          <span class="fw-bold small">Chi Lê</span>
+        </a>
+      </aside>
+    </div>
+
+    <footer class="app-footer">
+      © The Bunny ·
+      <a href="#">Điều khoản</a>
+      ·
+      <a href="#">Bảo mật</a>
+    </footer>
+
+    <div class="bottom-nav">
+      <a href="MXH.html" class="nav-btn-mobile"><i class="fa-solid fa-house"></i><span>Trang chủ</span></a>
+      <a href="#" class="nav-btn-mobile"><i class="fa-solid fa-user-group"></i><span>Nhóm</span></a>
+      <button type="button" class="nav-btn-mobile" style="color: var(--bunny-primary); margin-top: -15px">
+        <div class="bg-primary bg-opacity-10 rounded-circle p-2 shadow-sm"><i class="fa-solid fa-plus fs-4"></i></div>
+      </button>
+      <a href="inbox.html" class="nav-btn-mobile active">
+        <i class="fa-brands fa-facebook-messenger"></i><span>Tin nhắn</span>
+      </a>
+      <a href="#" class="nav-btn-mobile"><i class="fa-solid fa-user"></i><span>Hồ sơ</span></a>
+    </div>
+
+    <script src="inbox.js" defer></script>
+  </body>
+</html>

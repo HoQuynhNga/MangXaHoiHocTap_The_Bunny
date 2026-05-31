@@ -46,10 +46,22 @@ function adminRequireRole(): void
 function adminStatusBadge(string $status): string
 {
     return match ($status) {
-        'Active'  => 'success',
-        'Banned'  => 'danger',
-        'Pending' => 'warning',
-        default   => 'secondary',
+        'Active'   => 'success',
+        'Banned'   => 'danger',
+        'Pending'  => 'warning',
+        'Reviewed' => 'info',
+        'Resolved' => 'success',
+        default    => 'secondary',
+    };
+}
+
+function adminReportStatusLabel(string $status): string
+{
+    return match ($status) {
+        'Pending'  => 'Chờ xử lý',
+        'Reviewed' => 'Đang xem xét',
+        'Resolved' => 'Đã xử lý',
+        default    => $status,
     };
 }
 
@@ -115,6 +127,12 @@ function adminRenderLayoutStart(string $title, string $activeNav): void
         <a href="index.php" class="admin-nav__link<?= $activeNav === 'dashboard' ? ' active' : '' ?>"><i class="fa-solid fa-gauge-high"></i> Tổng quan</a>
         <a href="users.php" class="admin-nav__link<?= $activeNav === 'users' ? ' active' : '' ?>"><i class="fa-solid fa-users"></i> Người dùng</a>
         <a href="posts.php" class="admin-nav__link<?= $activeNav === 'posts' ? ' active' : '' ?>"><i class="fa-solid fa-newspaper"></i> Bài viết</a>
+        <a href="hang-tho.php" class="admin-nav__link<?= $activeNav === 'hang_tho' ? ' active' : '' ?>"><i class="fa-solid fa-layer-group"></i> Hang Thỏ</a>
+        <a href="hashtags.php" class="admin-nav__link<?= $activeNav === 'hashtags' ? ' active' : '' ?>"><i class="fa-solid fa-hashtag"></i> Hashtag</a>
+        <a href="tai-lieu.php" class="admin-nav__link<?= $activeNav === 'tai_lieu' ? ' active' : '' ?>"><i class="fa-solid fa-book"></i> Kho tài liệu</a>
+        <a href="cau-hoi.php" class="admin-nav__link<?= $activeNav === 'cau_hoi' ? ' active' : '' ?>"><i class="fa-solid fa-circle-question"></i> Câu hỏi</a>
+        <a href="su-kien.php" class="admin-nav__link<?= $activeNav === 'su_kien' ? ' active' : '' ?>"><i class="fa-solid fa-calendar-days"></i> Sự kiện</a>
+        <a href="reports.php" class="admin-nav__link<?= $activeNav === 'reports' ? ' active' : '' ?>"><i class="fa-solid fa-flag"></i> Báo cáo khiếu nại</a>
       </nav>
       <div class="admin-sidebar__foot">
         <a href="../trang-chu.php" class="admin-nav__link"><i class="fa-solid fa-arrow-left"></i> Về website</a>
