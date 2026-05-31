@@ -40,8 +40,24 @@ adminRenderLayoutStart('Tổng quan', 'dashboard');
     <div class="admin-stat-card__value green"><?= number_format($stats['posts_today']) ?></div>
   </div>
   <div class="admin-stat-card">
-    <div class="admin-stat-card__label">Bình luận</div>
-    <div class="admin-stat-card__value purple"><?= number_format($stats['comments_total']) ?></div>
+    <div class="admin-stat-card__label">Hang Thỏ</div>
+    <div class="admin-stat-card__value purple"><?= number_format($stats['hang_tho_total']) ?></div>
+  </div>
+  <div class="admin-stat-card">
+    <div class="admin-stat-card__label">Hashtag</div>
+    <div class="admin-stat-card__value purple"><?= number_format($stats['hashtag_total']) ?></div>
+  </div>
+  <div class="admin-stat-card">
+    <div class="admin-stat-card__label">Tài liệu</div>
+    <div class="admin-stat-card__value green"><?= number_format($stats['tai_lieu_total']) ?></div>
+  </div>
+  <div class="admin-stat-card">
+    <div class="admin-stat-card__label">Câu hỏi</div>
+    <div class="admin-stat-card__value green"><?= number_format($stats['cau_hoi_total']) ?></div>
+  </div>
+  <div class="admin-stat-card">
+    <div class="admin-stat-card__label">Sự kiện</div>
+    <div class="admin-stat-card__value purple"><?= number_format($stats['su_kien_total']) ?></div>
   </div>
   <div class="admin-stat-card">
     <div class="admin-stat-card__label">Báo cáo chờ xử lý</div>

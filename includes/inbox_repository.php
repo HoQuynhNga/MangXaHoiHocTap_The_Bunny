@@ -81,12 +81,77 @@ function inboxFindConversationWithPeer(PDO $pdo, int $currentUserId, int $peerId
              FROM cuoc_tro_chuyen_thanh_vien x
              WHERE x.cuoc_tro_chuyen_id = c.id
          ) = 2
+         ORDER BY (
+             SELECT COALESCE(MAX(tn.thoi_gian), c.created_at)
+             FROM tin_nhan tn
+             WHERE tn.cuoc_tro_chuyen_id = c.id
+         ) DESC, c.id ASC
          LIMIT 1'
     );
     $stmt->execute(['me' => $currentUserId, 'peer' => $peerId]);
     $id = $stmt->fetchColumn();
 
     return $id !== false ? (int) $id : null;
+}
+
+/**
+ * Gộp các cuộc trò chuyện 1-1 trùng cặp user (do seed/import chạy nhiều lần).
+ * Giữ cuộc có tin nhắn mới nhất; chuyển tin nhắn sang cuộc chính rồi xóa bản trùng.
+ */
+function inboxCleanupDuplicateConversations(PDO $pdo): int
+{
+    $pairs = $pdo->query(
+        "SELECT LEAST(m1.user_id, m2.user_id) AS u1,
+                GREATEST(m1.user_id, m2.user_id) AS u2,
+                GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) AS conv_ids
+         FROM cuoc_tro_chuyen c
+         INNER JOIN cuoc_tro_chuyen_thanh_vien m1 ON m1.cuoc_tro_chuyen_id = c.id
+         INNER JOIN cuoc_tro_chuyen_thanh_vien m2
+            ON m2.cuoc_tro_chuyen_id = c.id AND m2.user_id > m1.user_id
+         WHERE (SELECT COUNT(*) FROM cuoc_tro_chuyen_thanh_vien x WHERE x.cuoc_tro_chuyen_id = c.id) = 2
+         GROUP BY u1, u2
+         HAVING COUNT(DISTINCT c.id) > 1"
+    )->fetchAll();
+
+    $merged = 0;
+    foreach ($pairs as $pair) {
+        $ids = array_map('intval', explode(',', $pair['conv_ids']));
+        if (count($ids) < 2) {
+            continue;
+        }
+
+        // Chọn cuộc chính: nhiều tin nhắn nhất, hoặc id nhỏ nhất
+        $pick = $pdo->prepare(
+            'SELECT c.id,
+                    (SELECT COUNT(*) FROM tin_nhan tn WHERE tn.cuoc_tro_chuyen_id = c.id) AS msg_count,
+                    (SELECT COALESCE(MAX(tn.thoi_gian), c.created_at) FROM tin_nhan tn WHERE tn.cuoc_tro_chuyen_id = c.id) AS last_at
+             FROM cuoc_tro_chuyen c
+             WHERE c.id IN (' . implode(',', $ids) . ')
+             ORDER BY msg_count DESC, last_at DESC, c.id ASC
+             LIMIT 1'
+        );
+        $pick->execute();
+        $primaryId = (int) $pick->fetchColumn();
+        if ($primaryId <= 0) {
+            continue;
+        }
+
+        foreach ($ids as $dupId) {
+            if ($dupId === $primaryId) {
+                continue;
+            }
+            $pdo->prepare(
+                'UPDATE tin_nhan SET cuoc_tro_chuyen_id = :primary WHERE cuoc_tro_chuyen_id = :dup'
+            )->execute(['primary' => $primaryId, 'dup' => $dupId]);
+            $pdo->prepare(
+                'DELETE FROM cuoc_tro_chuyen_thanh_vien WHERE cuoc_tro_chuyen_id = :dup'
+            )->execute(['dup' => $dupId]);
+            $pdo->prepare('DELETE FROM cuoc_tro_chuyen WHERE id = :dup')->execute(['dup' => $dupId]);
+            $merged++;
+        }
+    }
+
+    return $merged;
 }
 
 function inboxGetOrCreateConversation(PDO $pdo, int $currentUserId, int $peerId): int
@@ -176,14 +241,22 @@ function inboxLoadConversations(PDO $pdo, int $currentUserId): array
     $stmt->execute(['me' => $currentUserId, 'me2' => $currentUserId]);
 
     $list = [];
+    $seenPeers = [];
     foreach ($stmt->fetchAll() as $row) {
+        $peerId = (int) $row['peer_id'];
+        // Một người chỉ hiển thị một dòng — lấy cuộc có tin nhắn mới nhất (ORDER BY ở trên)
+        if (isset($seenPeers[$peerId])) {
+            continue;
+        }
+        $seenPeers[$peerId] = true;
+
         $convId = (int) $row['conv_id'];
         $preview = (string) ($row['preview'] ?? '');
         $list[] = [
             'id'               => (string) $convId,
-            'peer_id'          => (int) $row['peer_id'],
+            'peer_id'          => $peerId,
             'name'             => inboxDisplayName($row['peer_username'], $row['peer_bio']),
-            'avatar'           => inboxAvatar((int) $row['peer_id']),
+            'avatar'           => inboxAvatar($peerId),
             'preview'          => $preview,
             'preview_from_you' => (int) ($row['last_sender_id'] ?? 0) === $currentUserId,
             'time_ago'         => !empty($row['last_sent_at'])
@@ -198,9 +271,10 @@ function inboxLoadConversations(PDO $pdo, int $currentUserId): array
 
 function inboxLoadChats(PDO $pdo, int $currentUserId): array
 {
+    $conversations = inboxLoadConversations($pdo, $currentUserId);
     $chats = [];
 
-    foreach (inboxLoadConversations($pdo, $currentUserId) as $conv) {
+    foreach ($conversations as $conv) {
         $chats[$conv['id']] = [
             'name'     => $conv['name'],
             'avatar'   => $conv['avatar'],
@@ -213,6 +287,32 @@ function inboxLoadChats(PDO $pdo, int $currentUserId): array
         return $chats;
     }
 
+    // Lấy tin nhắn từ mọi cuộc 1-1 với cùng peer (phòng khi DB còn bản trùng chưa gộp)
+    $convIds = array_map('intval', array_keys($chats));
+    $peerIds = array_values(array_unique(array_column($conversations, 'peer_id')));
+
+    $extraConvIds = [];
+    if ($peerIds !== []) {
+        $ph = implode(',', array_fill(0, count($peerIds), '?'));
+        $extraStmt = $pdo->prepare(
+            "SELECT DISTINCT c.id
+             FROM cuoc_tro_chuyen c
+             INNER JOIN cuoc_tro_chuyen_thanh_vien me ON me.cuoc_tro_chuyen_id = c.id AND me.user_id = ?
+             INNER JOIN cuoc_tro_chuyen_thanh_vien peer ON peer.cuoc_tro_chuyen_id = c.id AND peer.user_id IN ($ph)
+             WHERE (SELECT COUNT(*) FROM cuoc_tro_chuyen_thanh_vien x WHERE x.cuoc_tro_chuyen_id = c.id) = 2"
+        );
+        $extraStmt->execute(array_merge([$currentUserId], $peerIds));
+        foreach ($extraStmt->fetchAll(PDO::FETCH_COLUMN) as $cid) {
+            $extraConvIds[] = (int) $cid;
+        }
+    }
+
+    $allConvIds = array_values(array_unique(array_merge($convIds, $extraConvIds)));
+    $peerByConv = [];
+    foreach ($conversations as $conv) {
+        $peerByConv[(int) $conv['id']] = (int) $conv['peer_id'];
+    }
+
     $sql = "
         SELECT
             tn.cuoc_tro_chuyen_id AS conv_id,
@@ -223,29 +323,54 @@ function inboxLoadChats(PDO $pdo, int $currentUserId): array
         INNER JOIN cuoc_tro_chuyen_thanh_vien ctv
             ON ctv.cuoc_tro_chuyen_id = tn.cuoc_tro_chuyen_id
            AND ctv.user_id = :me
-        WHERE tn.cuoc_tro_chuyen_id IN (" . implode(',', array_map('intval', array_keys($chats))) . ")
+        WHERE tn.cuoc_tro_chuyen_id IN (" . implode(',', $allConvIds) . ")
         ORDER BY tn.thoi_gian ASC, tn.id ASC
     ";
     $stmt = $pdo->prepare($sql);
     $stmt->execute(['me' => $currentUserId]);
 
+    // Gom tin nhắn theo peer_id
+    $messagesByPeer = [];
     foreach ($stmt->fetchAll() as $row) {
-        $key = (string) (int) $row['conv_id'];
-        if (!isset($chats[$key])) {
+        $cid = (int) $row['conv_id'];
+        $peerId = $peerByConv[$cid] ?? null;
+        if ($peerId === null) {
+            // Resolve peer from conv members
+            $pStmt = $pdo->prepare(
+                'SELECT user_id FROM cuoc_tro_chuyen_thanh_vien WHERE cuoc_tro_chuyen_id = ? AND user_id <> ? LIMIT 1'
+            );
+            $pStmt->execute([$cid, $currentUserId]);
+            $peerId = (int) $pStmt->fetchColumn();
+        }
+        if ($peerId <= 0) {
             continue;
         }
-        $chats[$key]['messages'][] = [
+        $messagesByPeer[$peerId][] = [
             'from' => (int) $row['sender_user_id'] === $currentUserId ? 'me' : 'them',
             'text' => $row['noi_dung'],
             'time' => inboxTimeAgo($row['thoi_gian']),
+            '_ts'  => strtotime($row['thoi_gian']),
         ];
     }
+
+    foreach ($chats as $chatId => &$chat) {
+        $peerId = (int) $chat['peer_id'];
+        $msgs = $messagesByPeer[$peerId] ?? [];
+        usort($msgs, fn($a, $b) => ($a['_ts'] ?? 0) <=> ($b['_ts'] ?? 0));
+        $chat['messages'] = array_map(function ($m) {
+            unset($m['_ts']);
+            return $m;
+        }, $msgs);
+    }
+    unset($chat);
 
     return $chats;
 }
 
 function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
 {
+    require_once __DIR__ . '/buddies_repository.php';
+
     $stmt = $pdo->prepare(
         "SELECT
             peer.id AS peer_id,
@@ -267,14 +392,13 @@ function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
                 LIMIT 1
             ) AS conv_id
          FROM ban_cung_tien b
+         INNER JOIN (" . buddiesSqlUniqueAcceptedRelationIds() . ") uniq ON uniq.id = b.id
          INNER JOIN users peer ON peer.id = CASE
-             WHEN b.user_id = :me THEN b.friend_user_id
+             WHEN b.user_id = :me2 THEN b.friend_user_id
              ELSE b.user_id
          END
          LEFT JOIN ho_so_ca_nhan h ON h.user_id = peer.id
-         WHERE b.status = 'Accepted'
-           AND (b.user_id = :me2 OR b.friend_user_id = :me3)
-           AND peer.id <> :me4
+         WHERE peer.id <> :me3
          ORDER BY peer.is_online DESC, peer.username ASC
          LIMIT 12"
     );
@@ -283,7 +407,6 @@ function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
         'me'      => $currentUserId,
         'me2'     => $currentUserId,
         'me3'     => $currentUserId,
-        'me4'     => $currentUserId,
     ]);
 
     $friends = [];
@@ -302,6 +425,8 @@ function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
 
 function inboxLoadPage(PDO $pdo, int $currentUserId): array
 {
+    inboxCleanupDuplicateConversations($pdo);
+
     $currentUser = inboxLoadCurrentUser($pdo, $currentUserId);
     if ($currentUser === null) {
         throw new RuntimeException('Không tìm thấy user id=' . $currentUserId);

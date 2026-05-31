@@ -72,26 +72,39 @@ function buddiesBaseUserSelect(): string
             ), 0) AS xp_points';
 }
 
+/**
+ * Subquery SQL: một relation Accepted duy nhất cho mỗi cặp user (gom cả A→B lẫn B→A).
+ * Dùng trong JOIN, bind :me cho user hiện tại.
+ */
+function buddiesSqlUniqueAcceptedRelationIds(): string
+{
+    return "
+        SELECT MIN(f2.id) AS id
+        FROM ban_cung_tien f2
+        WHERE f2.status = 'Accepted'
+          AND (f2.user_id = :me OR f2.friend_user_id = :me)
+        GROUP BY LEAST(f2.user_id, f2.friend_user_id), GREATEST(f2.user_id, f2.friend_user_id)
+    ";
+}
+
 function buddiesLoadAccepted(PDO $pdo, int $currentUserId): array
 {
     $stmt = $pdo->prepare(
         'SELECT f.id AS relation_id, ' . buddiesBaseUserSelect() . '
          FROM ban_cung_tien f
+         INNER JOIN (' . buddiesSqlUniqueAcceptedRelationIds() . ') uniq ON uniq.id = f.id
          INNER JOIN users u ON u.id = CASE
-             WHEN f.user_id = :me THEN f.friend_user_id
+             WHEN f.user_id = :me2 THEN f.friend_user_id
              ELSE f.user_id
          END
          LEFT JOIN ho_so_ca_nhan h ON h.user_id = u.id
-         WHERE f.status = \'Accepted\'
-           AND (f.user_id = :me2 OR f.friend_user_id = :me3)
-           AND u.id <> :me4
+         WHERE u.id <> :me3
          ORDER BY u.is_online DESC, u.username ASC'
     );
     $stmt->execute([
         'me'  => $currentUserId,
         'me2' => $currentUserId,
         'me3' => $currentUserId,
-        'me4' => $currentUserId,
     ]);
 
     $list = [];
