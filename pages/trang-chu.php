@@ -298,19 +298,9 @@ $onlineFriends = [];
 </div>
 
             <div class="nav-menu">
-<<<<<<< HEAD
-                <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
-                <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Bạn cùng tiến</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-calendar-check"></i> Sự Kiện</a>
-                <a href="#" class="nav-item"><i class="fa-solid fa-bookmark"></i> Đã Lưu</a>
-=======
                 <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
                 <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm)</a>
                 <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách Đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
->>>>>>> origin/main
             </div>
             
             <hr class="my-3 text-muted opacity-25">
