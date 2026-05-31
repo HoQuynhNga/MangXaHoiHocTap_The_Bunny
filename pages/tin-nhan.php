@@ -10,8 +10,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $currentUserId = (int) $_SESSION['user_id'];
-$user_avatar         = "../assets/img/default-avatar.jpg";
-$stats_xp            = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
@@ -49,6 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 try {
     $page = inboxLoadPage(getPdo(), $currentUserId);
     extract($page);
+    $pdo = getPdo();
 } catch (Throwable $e) {
     bunnyFatalError($e->getMessage());
 }
@@ -1188,9 +1187,10 @@ a.friend-item:focus-visible {
     <div class="layout-container">
       <aside class="sidebar-left" id="sidebarLeft">
         <div class="user-mini d-none d-md-flex">
-          <img src="<?= htmlspecialchars($user_avatar) ?>" alt="<?= htmlspecialchars($currentUser['username']) ?>" width="44" height="44" />
+          <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="<?= htmlspecialchars($currentUser['name']) ?>" width="44" height="44" />
           <div>
-            <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
+            <div class="name"><?= htmlspecialchars($currentUser['name']) ?></div>
+            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($currentUser['xp']) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)</div>
           </div>
         </div>
 

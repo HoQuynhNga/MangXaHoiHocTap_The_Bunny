@@ -414,7 +414,7 @@ $shortcuts = [
                 <i class="fa-solid fa-khanda"></i>
             </a>
             
-            <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
+            <a href="pages/tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
                 <i class="fa-brands fa-facebook-messenger"></i>
             </a>
             

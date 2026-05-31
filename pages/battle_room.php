@@ -167,7 +167,7 @@ if(count($questions) == 0)
             <a href="../thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
                 <i class="fa-solid fa-khanda"></i>
             </a>
-            <a href="../tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
+            <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
                 <i class="fa-brands fa-facebook-messenger"></i>
             </a>
             <a href="../notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
