@@ -1191,7 +1191,6 @@ a.friend-item:focus-visible {
           <img src="<?= htmlspecialchars($user_avatar) ?>" alt="<?= htmlspecialchars($currentUser['username']) ?>" width="44" height="44" />
           <div>
             <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
-            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($stats_xp) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)</div>
           </div>
         </div>
 

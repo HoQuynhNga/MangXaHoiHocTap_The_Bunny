@@ -117,7 +117,6 @@ function renderBuddyCard(array $user, string $mode, ?int $relationId = null): vo
         <img src="<?= htmlspecialchars($user_avatar) ?>" alt="" width="44" height="44" />
         <div>
           <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
-          <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($stats_xp) ?> XP</div>
         </div>
       </div>
       <div class="nav-menu">
