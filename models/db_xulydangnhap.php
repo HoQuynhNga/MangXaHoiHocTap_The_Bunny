@@ -25,20 +25,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Nếu tìm thấy 1 email khớp trong DB
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
+
+        if ($user['status'] === 'Banned') {
+            echo "<script>alert('Tài khoản đã bị khóa. Liên hệ quản trị viên.'); window.history.back();</script>";
+            exit;
+        }
         
         // Kiểm tra mật khẩu (So sánh mk nhập vào với chuỗi băm Bcrypt trong DB)
         if (password_verify($password, $user['password_hash'])) {
             // ĐĂNG NHẬP THÀNH CÔNG: Lưu định danh vào Session
             $_SESSION['user_id'] = $user['id'];
-            $updateOnline = $pdo->prepare("
-                UPDATE users
-                SET is_online = 1
-                WHERE id = :id
-            ");
-
-            $updateOnline->execute([
-                'id' => $user['id']
-            ]);
             $_SESSION['username']  = $user['username'];
             $_SESSION['user_type']    = $user['user_type'];
             if ($user['user_type'] === 'quan_tri_vien') {

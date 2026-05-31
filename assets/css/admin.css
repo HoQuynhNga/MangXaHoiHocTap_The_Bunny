@@ -1,0 +1,259 @@
+/* Admin panel — The Bunny */
+
+:root {
+  --admin-primary: #7c3aed;
+  --admin-primary-soft: rgba(124, 58, 237, 0.12);
+  --admin-sidebar: #1e1b4b;
+  --admin-sidebar-text: #c4b5fd;
+  --admin-bg: #f5f3ff;
+}
+
+.admin-body {
+  font-family: "Inter", sans-serif;
+  background: var(--admin-bg);
+  color: #111827;
+}
+
+.admin-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 260px;
+  background: var(--admin-sidebar);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  margin-bottom: 28px;
+  padding: 0 8px;
+}
+
+.admin-brand i {
+  color: #fbbf24;
+}
+
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.admin-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: var(--admin-sidebar-text);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: 0.2s ease;
+}
+
+.admin-nav__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.admin-nav__link.active {
+  background: var(--admin-primary);
+  color: #fff;
+}
+
+.admin-sidebar__foot {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-main {
+  flex: 1;
+  padding: 24px 28px 40px;
+  overflow-x: auto;
+}
+
+.admin-topbar {
+  margin-bottom: 24px;
+}
+
+.admin-topbar__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin: 0 0 4px;
+}
+
+.admin-topbar__sub {
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.admin-flash {
+  border: none;
+  border-radius: 12px;
+}
+
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #ede9fe;
+}
+
+.admin-stat-card__label {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.admin-stat-card__value {
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.admin-stat-card__value.purple { color: var(--admin-primary); }
+.admin-stat-card__value.green { color: #059669; }
+.admin-stat-card__value.red { color: #dc2626; }
+.admin-stat-card__value.amber { color: #d97706; }
+
+.admin-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  border: 1px solid #ede9fe;
+  margin-bottom: 20px;
+}
+
+.admin-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.admin-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-filters .form-control,
+.admin-filters .form-select {
+  max-width: 220px;
+  border-radius: 10px;
+}
+
+.admin-table {
+  margin-bottom: 0;
+}
+
+.admin-table thead th {
+  background: #faf5ff;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #6b7280;
+  border-bottom: 1px solid #ede9fe;
+}
+
+.admin-table tbody td {
+  vertical-align: middle;
+  font-size: 0.92rem;
+}
+
+.admin-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-user-cell img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.admin-user-cell .meta .name {
+  font-weight: 700;
+}
+
+.admin-user-cell .meta .sub {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-post-preview {
+  max-width: 360px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.admin-pagination .page-link {
+  border-radius: 8px;
+  margin: 0 2px;
+  color: var(--admin-primary);
+}
+
+.admin-pagination .page-item.active .page-link {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+}
+
+@media (max-width: 992px) {
+  .admin-shell {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-main {
+    padding: 16px;
+  }
+}
