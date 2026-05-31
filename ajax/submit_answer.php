@@ -70,11 +70,11 @@ try
     }
 
     //-----------------------------------
-    // GET CORRECT ANSWER
+    // GET QUESTION DETAILS (Queries option letters and text for database compatibility)
     //-----------------------------------
 
     $stmtQuestion = $pdo->prepare("
-        SELECT dap_an_dung
+        SELECT dap_an_dung, lua_chon_a, lua_chon_b, lua_chon_c, lua_chon_d
         FROM cau_hoi
         WHERE id = ?
     ");
@@ -102,34 +102,29 @@ try
     //-----------------------------------
 
     $isCorrect = 0;
+    $submittedLetter = strtoupper(trim($answer)); // e.g. "A", "B", "C", "D"
+    $dbCorrectAnswer = trim($question['dap_an_dung']); // e.g. "B" or full text "Jean Valjean"
 
-    if(
-        strtoupper(trim($answer))
-        ==
-        strtoupper(trim($question['dap_an_dung']))
-    )
-    {
+    // Rule 1: Match if the database stores the single letter directly (A, B, C, D)
+    if ($submittedLetter === strtoupper($dbCorrectAnswer)) {
         $isCorrect = 1;
+    } 
+    // Rule 2: Match if the database stores the actual choice text
+    else {
+        $choiceText = '';
+        if ($submittedLetter === 'A') $choiceText = $question['lua_chon_a'];
+        elseif ($submittedLetter === 'B') $choiceText = $question['lua_chon_b'];
+        elseif ($submittedLetter === 'C') $choiceText = $question['lua_chon_c'];
+        elseif ($submittedLetter === 'D') $choiceText = $question['lua_chon_d'];
+
+        if (strtoupper(trim($choiceText)) === strtoupper($dbCorrectAnswer)) {
+            $isCorrect = 1;
+        }
     }
 
     //-----------------------------------
     // SAVE ANSWER
     //-----------------------------------
-
-    $stmtQuestion = $pdo->prepare("
-    SELECT dap_an_dung
-    FROM cau_hoi
-    WHERE id = ?
-    ");
-
-    $stmtQuestion->execute([
-        $questionId
-    ]);
-
-    $question =
-        $stmtQuestion->fetch(
-            PDO::FETCH_ASSOC
-        );
 
     $stmtInsert = $pdo->prepare("
         INSERT INTO battle_answers

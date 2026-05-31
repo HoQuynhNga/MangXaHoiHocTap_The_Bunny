@@ -34,6 +34,21 @@ try
     ]);
 
     /*
+        AUTO-DECLINE ALL OTHER PENDING INVITES FOR THIS RECEIVER
+    */
+    $stmtDeclineOthers = $pdo->prepare("
+        UPDATE battle_invites
+        SET status='declined'
+        WHERE receiver_id = :receiver
+        AND id != :invite
+        AND status = 'pending'
+    ");
+    $stmtDeclineOthers->execute([
+        'receiver' => $currentUser,
+        'invite' => $inviteId
+    ]);
+
+    /*
         lấy room
     */
 

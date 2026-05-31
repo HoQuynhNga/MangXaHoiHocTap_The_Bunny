@@ -31,6 +31,17 @@ try
         $_POST['exam_set_id'];
 
     //------------------------------------------------
+    // CLEAN UP OLD PENDING INVITES FOR THIS RECEIVER
+    //------------------------------------------------
+    $stmtCancel = $pdo->prepare("
+        UPDATE battle_invites
+        SET status = 'declined'
+        WHERE receiver_id = ?
+        AND status = 'pending'
+    ");
+    $stmtCancel->execute([$opponentId]);
+
+    //------------------------------------------------
     // CREATE ROOM
     //------------------------------------------------
 
