@@ -4,7 +4,7 @@
 // ==========================================
 
 // XAMPP thường sử dụng 'localhost' làm địa chỉ máy chủ mặc định
-define('DB_HOST', 'localhost'); 
+define('DB_HOST', '127.0.0.1'); 
 
 // Tên Database bạn đã tạo trong http://localhost/phpmyadmin/
 define('DB_NAME', 'TheBunny_Nhom10'); 

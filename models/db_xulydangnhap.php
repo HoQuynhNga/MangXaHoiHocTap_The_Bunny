@@ -25,6 +25,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Nếu tìm thấy 1 email khớp trong DB
     if ($result->num_rows === 1) {
         $user = $result->fetch_assoc();
+
+        if ($user['status'] === 'Banned') {
+            echo "<script>alert('Tài khoản đã bị khóa. Liên hệ quản trị viên.'); window.history.back();</script>";
+            exit;
+        }
         
         // Kiểm tra mật khẩu (So sánh mk nhập vào với chuỗi băm Bcrypt trong DB)
         if (password_verify($password, $user['password_hash'])) {

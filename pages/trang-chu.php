@@ -398,9 +398,7 @@ $onlineFriends = [];
         <button class="nav-btn-mobile active">
             <i class="fa-solid fa-house"></i><span>Trang chủ</span>
         </button>
-        <button class="nav-btn-mobile">
-            <i class="fa-solid fa-user-group"></i><span>Nhóm</span>
-        </button>
+        <a href="ban-cung-tien.php" class="nav-btn-mobile"><i class="fa-solid fa-user-group"></i><span>Bạn bè</span></a>
         <button class="nav-btn-mobile" style="color: var(--bunny-primary); margin-top: -15px;">
             <div class="bg-primary bg-opacity-10 rounded-circle p-2 shadow-sm"><i class="fa-solid fa-plus fs-4"></i></div>
         </button>

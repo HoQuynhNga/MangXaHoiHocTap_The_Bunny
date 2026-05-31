@@ -1040,7 +1040,7 @@ try {
                                     <img src="https://cdn-icons-png.flaticon.com/512/3394/3394785.png" alt="Danh sách mạng lưới hoàn toàn trống" width="120" class="opacity-50 mb-4">
                                     <h4 class="text-dark fw-bold">Hiện chưa có liên kết học tập đồng hành nào</h4>
                                     <p class="text-muted fs-5 m-0 px-4">Hãy khám phá tính năng Hang thỏ hoặc Bảng xếp hạng Thách đấu trên The Bunny để gửi lời mời và tìm kiếm những người bạn cùng chung năng lực học thuật.</p>
-                                    <button class="btn btn-primary fw-bold px-5 py-3 rounded-pill mt-4 shadow-sm fs-5"><i class="fa-solid fa-magnifying-glass me-2"></i> Tiến hành kết nối bạn mới</button>
+                                    <a href="ban-cung-tien.php" class="btn btn-primary fw-bold px-5 py-3 rounded-pill mt-4 shadow-sm fs-5 text-decoration-none"><i class="fa-solid fa-magnifying-glass me-2"></i> Tiến hành kết nối bạn mới</a>
                                 </div>
                             <?php endif; ?>
                             

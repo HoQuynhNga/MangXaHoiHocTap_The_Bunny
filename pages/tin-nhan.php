@@ -1,23 +1,47 @@
 <?php
-session_start();
-
 require_once '../config/config.php';
+require_once '../config/db_module.php';
 require_once '../includes/bunny_helpers.php';
 require_once '../includes/inbox_repository.php';
 
-$currentUserId = (int) ($_SESSION['user_id'] ?? DEFAULT_USER_ID);
+if (!isset($_SESSION['user_id'])) {
+    header('Location: ../index.php');
+    exit;
+}
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'send_message') {
+$currentUserId = (int) $_SESSION['user_id'];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
+    $action = $_POST['action'] ?? '';
+
     try {
         $pdo = getPdo();
-        $msg = inboxSendMessage($pdo, $currentUserId, (string) ($_POST['chat_id'] ?? ''), (string) ($_POST['text'] ?? ''));
-        echo json_encode(['ok' => true, 'message' => $msg], JSON_UNESCAPED_UNICODE);
+
+        if ($action === 'send_message') {
+            $msg = inboxSendMessage(
+                $pdo,
+                $currentUserId,
+                (string) ($_POST['chat_id'] ?? ''),
+                (string) ($_POST['text'] ?? '')
+            );
+            echo json_encode(['ok' => true, 'message' => $msg], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        if ($action === 'start_chat') {
+            $peerId = (int) ($_POST['peer_id'] ?? 0);
+            $payload = inboxStartChat($pdo, $currentUserId, $peerId);
+            echo json_encode(['ok' => true] + $payload, JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        throw new InvalidArgumentException('Hành động không hợp lệ.');
     } catch (Throwable $e) {
         http_response_code(500);
         echo json_encode(['ok' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+        exit;
     }
-    exit;
 }
 
 try {
@@ -1214,9 +1238,7 @@ a.friend-item:focus-visible {
 
         <div class="nav-menu">
           <a href="trang-chu.php" class="nav-item"><i class="fa-solid fa-house"></i> Bảng tin</a>
-          <a href="#" class="nav-item">
-            <i class="fa-solid fa-user-group"></i> Hang Thỏ (Nhóm) <span class="badge-count">3</span>
-          </a>
+          <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Bạn cùng tiến</a>
           <a href="#" class="nav-item"><i class="fa-solid fa-book-bookmark"></i> Kho Tài Liệu</a>
           <a href="#" class="nav-item"><i class="fa-solid fa-map-location-dot"></i> Lộ Trình Học</a>
           <a href="thach-dau.php" class="nav-item">
@@ -1257,6 +1279,9 @@ a.friend-item:focus-visible {
                 <span class="inbox-panel__title">Hộp thư đến <span class="inbox-panel__count" id="inboxThreadCount">(<?= $inboxThreadCount ?>)</span></span>
               </div>
               <div class="inbox-panel__items" role="listbox" aria-label="Danh sách cuộc trò chuyện">
+                <?php if ($conversations === []): ?>
+                <p class="text-muted small px-3 py-4 mb-0">Chưa có cuộc trò chuyện. Bấm vào bạn cùng tiến bên phải để bắt đầu nhắn tin.</p>
+                <?php else: ?>
                 <?php foreach ($conversations as $conv): ?>
                 <button
                   type="button"
@@ -1285,6 +1310,7 @@ a.friend-item:focus-visible {
                   </span>
                 </button>
                 <?php endforeach; ?>
+                <?php endif; ?>
               </div>
             </div>
             <div class="inbox-panel__empty" id="inboxPlaceholder" aria-hidden="false">
@@ -1333,9 +1359,21 @@ a.friend-item:focus-visible {
           <?php endforeach; ?>
         </div>
 
-        <div class="section-title ps-2 mb-2">Bạn cùng tiến online</div>
+        <div class="section-title ps-2 mb-2 d-flex justify-content-between align-items-center">
+          <span>Bạn cùng tiến</span>
+          <a href="ban-cung-tien.php" class="small text-primary fw-semibold">Quản lý</a>
+        </div>
+        <?php if ($onlineFriends === []): ?>
+        <p class="text-muted small ps-2">Chưa có bạn cùng tiến. Kết bạn từ trang chủ để nhắn tin.</p>
+        <?php endif; ?>
         <?php foreach ($onlineFriends as $friend): ?>
-        <a href="#chat-<?= htmlspecialchars($friend['chat_id']) ?>" id="chat-<?= htmlspecialchars($friend['chat_id']) ?>" class="friend-item" data-open-chat="<?= htmlspecialchars($friend['chat_id']) ?>">
+        <a
+          href="#chat-<?= htmlspecialchars($friend['chat_id'] !== '' ? $friend['chat_id'] : ('peer-' . $friend['peer_id'])) ?>"
+          id="chat-<?= htmlspecialchars($friend['chat_id'] !== '' ? $friend['chat_id'] : ('peer-' . $friend['peer_id'])) ?>"
+          class="friend-item"
+          data-open-chat="<?= htmlspecialchars($friend['chat_id']) ?>"
+          data-peer-id="<?= (int) $friend['peer_id'] ?>"
+        >
           <div class="friend-avatar"><img src="<?= htmlspecialchars($friend['avatar']) ?>" alt="" /><div class="online-dot<?= $friend['status'] === 'away' ? ' away-dot' : '' ?>"></div></div>
           <span class="fw-bold small<?= $friend['status'] === 'away' ? ' text-muted' : '' ?>"><?= htmlspecialchars($friend['name']) ?></span>
         </a>
@@ -1352,7 +1390,7 @@ a.friend-item:focus-visible {
 
     <div class="bottom-nav">
       <a href="trang-chu.php" class="nav-btn-mobile"><i class="fa-solid fa-house"></i><span>Trang chủ</span></a>
-      <a href="#" class="nav-btn-mobile"><i class="fa-solid fa-user-group"></i><span>Nhóm</span></a>
+      <a href="ban-cung-tien.php" class="nav-btn-mobile"><i class="fa-solid fa-user-group"></i><span>Bạn bè</span></a>
       <button type="button" class="nav-btn-mobile" style="color: var(--bunny-primary); margin-top: -15px">
         <div class="bg-primary bg-opacity-10 rounded-circle p-2 shadow-sm"><i class="fa-solid fa-plus fs-4"></i></div>
       </button>
@@ -1362,7 +1400,6 @@ a.friend-item:focus-visible {
       <a href="<?= htmlspecialchars($currentUser['profile_url']) ?>" class="nav-btn-mobile"><i class="fa-solid fa-user"></i><span>Hồ sơ</span></a>
     </div>
 
-    <script src="inbox.js" defer></script>
     <script>
       function toggleSidebar() {
   document.getElementById("sidebarLeft").classList.toggle("open");
@@ -1474,16 +1511,91 @@ a.friend-item:focus-visible {
     });
   }
 
-  document.querySelectorAll("a.friend-item[data-open-chat]").forEach(function (a) {
+  document.querySelectorAll("a.friend-item[data-peer-id]").forEach(function (a) {
     a.addEventListener("click", function (e) {
-      var id = a.getAttribute("data-open-chat");
-      if (!id || !CHATS[id]) return;
       e.preventDefault();
-      var row = document.querySelector('.msg-row[data-chat-id="' + id + '"]');
-      if (row && row.scrollIntoView) row.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      openChat(id);
+      var id = a.getAttribute("data-open-chat");
+      var peerId = a.getAttribute("data-peer-id");
+      if (id && CHATS[id]) {
+        var row = document.querySelector('.msg-row[data-chat-id="' + id + '"]');
+        if (row && row.scrollIntoView) row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        openChat(id);
+        return;
+      }
+      if (!peerId) return;
+      startChatWithPeer(peerId, a);
     });
   });
+
+  function appendConversationRow(conv) {
+    if (!listBox) return;
+    var emptyHint = listBox.querySelector("p.text-muted");
+    if (emptyHint) emptyHint.remove();
+
+    if (document.querySelector('.msg-row[data-chat-id="' + conv.id + '"]')) {
+      return;
+    }
+
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "msg-row";
+    btn.setAttribute("role", "option");
+    btn.setAttribute("data-chat-id", conv.id);
+    btn.setAttribute("aria-selected", "false");
+    btn.innerHTML =
+      '<img class="msg-row__avatar" src="' +
+      escapeHtml(conv.avatar) +
+      '" width="40" height="40" alt="" />' +
+      '<span class="msg-row__body">' +
+      '<span class="msg-row__name">' +
+      escapeHtml(conv.name) +
+      "</span>" +
+      '<span class="msg-row__preview">' +
+      escapeHtml(conv.preview || "") +
+      "</span>" +
+      '<span class="msg-row__time">' +
+      escapeHtml(conv.time_ago || "") +
+      "</span></span>";
+    listBox.insertBefore(btn, listBox.firstChild);
+    updateThreadCount();
+  }
+
+  function startChatWithPeer(peerId, friendLink) {
+    if (sendBusy) return;
+    sendBusy = true;
+
+    var body = new URLSearchParams();
+    body.set("action", "start_chat");
+    body.set("peer_id", peerId);
+
+    fetch("tin-nhan.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString(),
+    })
+      .then(function (res) {
+        return res.json().then(function (data) {
+          if (!res.ok || !data.ok) {
+            throw new Error((data && data.error) || "Không mở được cuộc trò chuyện");
+          }
+          return data;
+        });
+      })
+      .then(function (data) {
+        CHATS[data.chat_id] = data.chat;
+        appendConversationRow(data.conversation);
+        if (friendLink) {
+          friendLink.setAttribute("data-open-chat", data.chat_id);
+        }
+        openChat(data.chat_id);
+      })
+      .catch(function (err) {
+        alert(err.message || "Không mở được cuộc trò chuyện");
+      })
+      .finally(function () {
+        sendBusy = false;
+      });
+  }
 
   if (toolbarSearch) {
     toolbarSearch.addEventListener("input", function () {
@@ -1586,6 +1698,17 @@ a.friend-item:focus-visible {
     e.stopImmediatePropagation();
     sendMessage();
   });
+
+  var urlPeerId = new URLSearchParams(window.location.search).get("peer_id");
+  if (urlPeerId) {
+    var friendLink = document.querySelector('a.friend-item[data-peer-id="' + urlPeerId + '"]');
+    var existingChatId = friendLink ? friendLink.getAttribute("data-open-chat") : "";
+    if (existingChatId && CHATS[existingChatId]) {
+      openChat(existingChatId);
+    } else {
+      startChatWithPeer(urlPeerId, friendLink);
+    }
+  }
 })();
 
     </script>
