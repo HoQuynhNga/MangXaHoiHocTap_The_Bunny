@@ -44,15 +44,14 @@ function startBattle()
         }
     )
     .then(response => response.json())
-    .then(data => {
-
-        alert(data.message);
-
+    .then(data =>
+    {
         if(data.success)
         {
-            location.reload();
+            location.href =
+                "battle_room.php?room_id="
+                + data.room_id;
         }
-
     })
     .catch(error => {
 
