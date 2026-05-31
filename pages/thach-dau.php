@@ -18,8 +18,7 @@ $user_avatar = "https://i.pravatar.cc/150?img=12";
 
 $stats_fire = 15;
 
-$current_user_id = 1;
-
+$current_user_id = $_SESSION['user_id'] ?? 1;
 // =====================================================================================
 // PHẦN 2: KẾT NỐI DATABASE
 // =====================================================================================
@@ -45,34 +44,64 @@ try {
 // PHẦN 3: LẤY THÔNG TIN USER
 // =====================================================================================
 
-try {
+$onlineUsers = [];
 
-    $sql_query = "
-        SELECT 
+try
+{
+    // ====================================================
+    // LẤY USER HIỆN TẠI
+    // ====================================================
+
+    $sqlUser = "
+        SELECT
             username
         FROM users
         WHERE id = :id
     ";
 
-    $stmt = $pdo->prepare($sql_query);
+    $stmt = $pdo->prepare($sqlUser);
 
     $stmt->execute([
         'id' => $current_user_id
     ]);
 
-    if ($row = $stmt->fetch()) {
-
+    if ($row = $stmt->fetch())
+    {
         $user_name = $row['username'] ?? $user_name;
 
-        // Avatar mặc định vì DB chưa có cột avatar
-        $user_avatar = "https://i.pravatar.cc/150?img=12";
+
     }
 
-} catch (PDOException $e) {
+    // ====================================================
+    // LẤY DANH SÁCH USER ONLINE
+    // ====================================================
 
+    $sqlOnline = "
+        SELECT
+            id,
+            username,
+            avatar
+        FROM users
+        WHERE is_online = 1
+        AND id != :current_user
+    ";
+
+    $stmtOnline = $pdo->prepare($sqlOnline);
+
+    $stmtOnline->execute([
+        'current_user' => $current_user_id
+    ]);
+
+    $onlineUsers = $stmtOnline->fetchAll();
+
+}
+catch(PDOException $e)
+{
     echo "Lỗi truy vấn user: " . $e->getMessage();
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -92,9 +121,9 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phòng Practice - The Bunny</title>
     
-    <link rel="stylesheet" href="../assets/css/root.css">
-    <link rel="stylesheet" href="../assets/css/thach_dau.css">
-    <script defer src="../assets/js/thach_dau.js"></script>
+    <link href="../assets/css/root.css" rel="stylesheet">
+    <link href="../assets/css/thach_dau.css" rel="stylesheet">
+    <script src="../assets/js/thach_dau.js"></script>
     
 </head>
 <body>
@@ -346,16 +375,49 @@ try {
                         <input type="text" class="form-control bg-light border-0" placeholder="Tìm kiếm tên bạn bè...">
                     </div>
                     <div class="list-group list-group-flush" style="max-height: 300px; overflow-y: auto;">
+                        <?php if(count($onlineUsers) > 0): ?>
+
+                    <?php foreach($onlineUsers as $user): ?>
+
                         <div class="list-group-item d-flex justify-content-between align-items-center p-3 border-0">
+
                             <div class="d-flex align-items-center gap-3">
-                                <img src="https://i.pravatar.cc/150?img=9" class="rounded-circle" width="40">
+
+                                <img src="https://i.pravatar.cc/150?img=9"
+                                    class="rounded-circle"
+                                    width="40">
+
                                 <div>
-                                    <h6 class="m-0 fw-bold">Hoàng Oanh</h6>
-                                    <small class="text-success"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Đang online</small>
+                                    <h6 class="m-0 fw-bold">
+                                        <?= htmlspecialchars($user['username']) ?>
+                                    </h6>
+
+                                    <small class="text-success">
+                                        <i class="fa-solid fa-circle"
+                                        style="font-size:8px;"></i>
+                                        Đang online
+                                    </small>
                                 </div>
+
                             </div>
-                            <button class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3">Mời</button>
+
+                            <button
+                                class="btn btn-sm btn-outline-primary fw-bold rounded-pill px-3"
+                                onclick="inviteUser(<?= $user['id'] ?>)">
+                                Mời
+                            </button>
+
                         </div>
+
+                    <?php endforeach; ?>
+
+                <?php else: ?>
+
+                    <div class="text-center p-4 text-muted">
+                        Không có người dùng nào đang online
+                    </div>
+
+                <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -373,9 +435,39 @@ try {
                     <p class="text-muted small mb-4">Biến phòng luyện tập này thành sàn đấu gay cấn. 10 câu hỏi theo danh mục hiện tại.</p>
                     <div class="mb-3">
                         <label class="form-label fw-bold small text-muted text-uppercase">Đối thủ (Trong phòng)</label>
-                        <select class="form-select bg-light border-0 fw-bold">
-                            <option value="all">Thách đấu tất cả mọi người</option>
-                            <option value="1">Lê Minh Tuấn</option>
+                            <label class="form-label fw-bold">
+                                Bộ đề
+                            </label>
+
+                            <select
+                                id="exam_set_id"
+                                class="form-select"
+                            >
+
+                                <option value="1">
+                                    Bộ đề Văn học
+                                </option>
+
+                                <option value="2">
+                                    Bộ đề Toán
+                                </option>
+
+                                <option value="3">
+                                    Bộ đề Tiếng Anh
+                                </option>
+
+                            </select>
+                        <select
+                            id="opponent_id"
+                            class="form-select bg-light border-0 fw-bold"
+                        >
+                            <?php foreach($onlineUsers as $user): ?>
+
+                                <option value="<?= $user['id'] ?>">
+                                    <?= htmlspecialchars($user['username']) ?>
+                                </option>
+
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="alert alert-info border-0 bg-info bg-opacity-10 d-flex gap-3 m-0 rounded-3">
@@ -398,6 +490,47 @@ try {
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         </div>
+    </div>
+    <div class="modal fade" id="battleInviteModal">
+
+    <div class="modal-dialog modal-dialog-centered">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Thư mời thách đấu
+                </h5>
+
+            </div>
+
+            <div class="modal-body">
+
+                <p id="inviteText"></p>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    class="btn btn-secondary"
+                    onclick="declineInvite()">
+                    Từ chối
+                </button>
+
+                <button
+                    class="btn btn-success"
+                    onclick="acceptInvite()">
+                    Chấp nhận
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- <script src="../assets/js/thach_dau.js"></script> -->

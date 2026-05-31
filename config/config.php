@@ -36,4 +36,15 @@ date_default_timezone_set('Asia/Ho_Chi_Minh');
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+// ==========================================
+// LẤY ĐƯỜNG DẪN CÁC TRANG
+// ==========================================
+// 1. Lấy giao thức mạng (http hoặc https)
+$protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https://" : "http://";
+
+// 2. Chặt đường dẫn hiện tại ra để lấy thư mục gốc trên XAMPP
+$thu_muc_goc = explode('/', $_SERVER['PHP_SELF'])[1]; 
+
+// 3. Khai báo Hằng số BASE_URL dùng chung cho toàn bộ dự án
+define('BASE_URL', $protocol . $_SERVER['HTTP_HOST'] . '/' . $thu_muc_goc);
 ?>
