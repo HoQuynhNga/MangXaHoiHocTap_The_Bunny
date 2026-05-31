@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_SESSION['username']  = $user['username'];
             $_SESSION['user_type']    = $user['user_type'];
             if ($user['user_type'] === 'quan_tri_vien') {
-                header("Location: ../pages/admin.php");
+                header("Location: ../pages/admin/index.php");
             } else {
                 header("Location: ../pages/trang-chu.php"); 
             }

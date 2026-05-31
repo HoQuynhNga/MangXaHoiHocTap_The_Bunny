@@ -6,7 +6,6 @@
  * Chức năng: Hiển thị hồ sơ cá nhân, dòng thời gian, tài liệu, sự kiện và bạn bè.
  * Xử lý Backend: Đăng bài, Sửa hồ sơ, Thêm tài liệu, Tạo sự kiện.
  * Xử lý Tương tác (Mới): Thích (Like), Bình luận (Comment), Chia sẻ (Share) bài viết.
- * Đã khắc phục: Mọi dữ liệu đều liên kết 100% với Database thực tế.
  * =========================================================================================
  */
 
