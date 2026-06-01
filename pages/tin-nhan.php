@@ -10,6 +10,8 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $currentUserId = (int) $_SESSION['user_id'];
+$user_avatar         = "../assets/img/default-avatar.jpg";
+$stats_xp            = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=utf-8');
@@ -81,8 +83,7 @@ $shortcuts = [];
         <div class="user-mini d-none d-md-flex">
           <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="<?= htmlspecialchars($currentUser['name']) ?>" width="44" height="44" />
           <div>
-            <div class="name"><?= htmlspecialchars($currentUser['name']) ?></div>
-            <div class="xp"><i class="fa-solid fa-fire text-danger"></i> <?= number_format($currentUser['xp']) ?> XP (<?= htmlspecialchars($currentUser['xp_rank']) ?>)</div>
+            <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
           </div>
         </div>
 
@@ -133,13 +134,13 @@ $shortcuts = [];
                 >
                   <img
                     class="msg-row__avatar"
-                    src="<?= htmlspecialchars($conv['avatar']) ?>"
+                    src="<?= htmlspecialchars($user_avatar) ?>"
                     width="40"
                     height="40"
                     alt=""
                   />
                   <span class="msg-row__body">
-                    <span class="msg-row__name"><?= htmlspecialchars($conv['name']) ?></span>
+                    <span class="msg-row__name"><?= htmlspecialchars($conv['username']) ?></span>
                     <?php if (!empty($conv['preview_from_you'])): ?>
                     <span class="msg-row__preview msg-row__preview--you">
                       <span class="msg-row__you-label">Bạn:</span> <?= htmlspecialchars($conv['preview']) ?>
@@ -215,8 +216,8 @@ $shortcuts = [];
           data-open-chat="<?= htmlspecialchars($friend['chat_id']) ?>"
           data-peer-id="<?= (int) $friend['peer_id'] ?>"
         >
-          <div class="friend-avatar"><img src="<?= htmlspecialchars($friend['avatar']) ?>" alt="" /><div class="online-dot<?= $friend['status'] === 'away' ? ' away-dot' : '' ?>"></div></div>
-          <span class="fw-bold small<?= $friend['status'] === 'away' ? ' text-muted' : '' ?>"><?= htmlspecialchars($friend['name']) ?></span>
+          <div class="friend-avatar"><img src="<?= htmlspecialchars($user_avatar) ?>" alt="" /><div class="online-dot<?= $friend['status'] === 'away' ? ' away-dot' : '' ?>"></div></div>
+          <span class="fw-bold small<?= $friend['status'] === 'away' ? ' text-muted' : '' ?>"><?= htmlspecialchars($friend['username']) ?></span>
         </a>
         <?php endforeach; ?>
       </aside>
