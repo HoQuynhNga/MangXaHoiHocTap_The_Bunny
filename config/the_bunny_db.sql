@@ -289,109 +289,54 @@ CREATE TABLE IF NOT EXISTS bao_cao_vi_pham (
     FOREIGN KEY (nguoi_bi_bao_cao_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS battle_invites (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    sender_id INT UNSIGNED NOT NULL,
-    receiver_id INT UNSIGNED NOT NULL,
-    status ENUM(
-        'pending',
-        'accepted',
-        'declined'
-    ) DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
+-- Kích hoạt lại kiểm tra khóa ngoại (nếu bạn đã tắt trước đó bằng SET FOREIGN_KEY_CHECKS = 0;)
+SET FOREIGN_KEY_CHECKS = 1;
 
-ALTER TABLE battle_invites
-ADD COLUMN room_id INT NOT NULL AFTER id;
-
+-- 1. BẢNG PHÒNG THÁCH ĐẤU (Tạo trước vì các bảng sau cần tham chiếu tới room_id)
 CREATE TABLE IF NOT EXISTS battle_rooms (
-    room_id INT AUTO_INCREMENT PRIMARY KEY,
-
+    room_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     host_id INT UNSIGNED NOT NULL,
     exam_set_id INT UNSIGNED NOT NULL,
-
-    status ENUM(
-        'waiting',
-        'playing',
-        'finished'
-    ) DEFAULT 'waiting',
-
+    status ENUM('waiting', 'playing', 'finished') DEFAULT 'waiting',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (host_id)
-        REFERENCES users(id),
-
-    FOREIGN KEY (exam_set_id)
-        REFERENCES bo_de(id)
+    FOREIGN KEY (host_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (exam_set_id) REFERENCES bo_de(id) ON DELETE CASCADE
 );
 
+-- 2. BẢNG LỜI MỜI THÁCH ĐẤU
 CREATE TABLE IF NOT EXISTS battle_invites (
-    invite_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    room_id INT NOT NULL,
-
+    invite_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    room_id INT UNSIGNED NOT NULL,
     sender_id INT UNSIGNED NOT NULL,
-
     receiver_id INT UNSIGNED NOT NULL,
-
-    status ENUM(
-        'pending',
-        'accepted',
-        'declined'
-    ) DEFAULT 'pending',
-
+    status ENUM('pending', 'accepted', 'declined') DEFAULT 'pending',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (room_id)
-        REFERENCES battle_rooms(room_id),
-
-    FOREIGN KEY (sender_id)
-        REFERENCES users(id),
-
-    FOREIGN KEY (receiver_id)
-        REFERENCES users(id)
+    FOREIGN KEY (room_id) REFERENCES battle_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 3. BẢNG NGƯỜI THAM GIA PHÒNG
 CREATE TABLE IF NOT EXISTS battle_participants (
-    participant_id INT AUTO_INCREMENT PRIMARY KEY,
-
-    room_id INT NOT NULL,
-
+    participant_id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    room_id INT UNSIGNED NOT NULL,
     user_id INT UNSIGNED NOT NULL,
-
     score INT DEFAULT 0,
-
     joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (room_id)
-        REFERENCES battle_rooms(room_id),
-
-    FOREIGN KEY (user_id)
-        REFERENCES users(id),
-
-    UNIQUE(room_id, user_id)
+    FOREIGN KEY (room_id) REFERENCES battle_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY uk_room_user (room_id, user_id)
 );
 
-CREATE TABLE IF NOT EXISTS battle_answers
-(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-
-    room_id INT NOT NULL,
-
+-- 4. BẢNG ĐÁP ÁN CỦA NGƯỜI CHƠI
+CREATE TABLE IF NOT EXISTS battle_answers (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    room_id INT UNSIGNED NOT NULL,
     user_id INT UNSIGNED NOT NULL,
-
-    question_id INT NOT NULL,
-
+    question_id INT UNSIGNED NOT NULL,
     answer VARCHAR(20) NOT NULL,
-
     is_correct TINYINT(1) DEFAULT 0,
-
-    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
-    FOREIGN KEY (room_id)
-        REFERENCES battle_rooms(room_id),
-
-    FOREIGN KEY (user_id)
-        REFERENCES users(id),
+    answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (room_id) REFERENCES battle_rooms(room_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-SET FOREIGN_KEY_CHECKS = 1;

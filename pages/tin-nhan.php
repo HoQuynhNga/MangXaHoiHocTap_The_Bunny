@@ -1,6 +1,5 @@
 <?php
 require_once '../config/config.php';
-require_once '../config/db_module.php';
 require_once '../includes/bunny_helpers.php';
 require_once '../includes/inbox_repository.php';
 
@@ -87,15 +86,13 @@ $shortcuts = [];
   </div>
 </div>
         <div class="nav-menu">
-                <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
+                <a href="trang-chu.php" class="nav-item"><i class="fa-solid fa-house"></i> Bảng tin</a>
                 <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang thỏ</a>
                 <a href="ban-cung-tien.php" class="nav-item"><i class="fa-solid fa-child"></i>Bạn cùng tiến</a>
                 <a href="thach-dau.php" class="nav-item"><i class="fa-solid fa-khanda"></i> Thách đấu <span class="badge-count" style="background: #EF4444;">Mới</span></a>
             </div>
 
         <hr class="my-3 text-muted opacity-25" />
-
-        <h6 class="text-muted fw-bold small ms-3 mb-3 text-uppercase">Lối tắt của bạn</h6>
         <div class="nav-menu">
           <?php foreach ($shortcuts as $sc): ?>
           <a href="<?= htmlspecialchars($sc['url']) ?>" class="nav-item py-2">
@@ -168,7 +165,6 @@ $shortcuts = [];
                 <img class="inbox-chat__avatar" id="inboxChatHeaderAvatar" src="" width="40" height="40" alt="" />
                 <div class="inbox-chat__meta">
                   <div class="inbox-chat__name" id="inboxChatHeaderName"></div>
-                  <div class="inbox-chat__status">Đang hoạt động</div>
                 </div>
               </div>
               <div class="inbox-chat__messages" id="inboxChatMessages" tabindex="-1"></div>

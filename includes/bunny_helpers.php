@@ -2,7 +2,7 @@
 
 function bunnyAvatar(int $userId): string
 {
-    return 'https://i.pravatar.cc/150?img=' . (($userId % 70) + 1);
+    return '../assets/img/default-avtar.jpg' . (($userId % 70) + 1);
 }
 
 function bunnyDisplayName(?string $username, ?string $thongTinDinhDanh): string

@@ -4,12 +4,12 @@ require_once __DIR__ . '/bunny_helpers.php';
 
 function inboxAvatar(int $userId): string
 {
-    return bunnyAvatar($userId);
+    return '../assets/img/default-avatar.jpg';
 }
 
 function inboxDisplayName(?string $username, ?string $thongTinDinhDanh): string
 {
-    return bunnyDisplayName($username, $thongTinDinhDanh);
+    return $username ?? 'Tài khoản ẩn danh';
 }
 
 function inboxTimeAgo(string $datetime): string
@@ -39,6 +39,7 @@ function inboxLoadCurrentUser(PDO $pdo, int $userId): ?array
 
     return [
         'id'          => (int) $row['id'],
+        'username'    => $row['username'],
         'name'        => inboxDisplayName($row['username'], $row['thong_tin_dinh_danh']),
         'avatar'      => inboxAvatar((int) $row['id']),
         'xp'          => $xp,
@@ -205,6 +206,7 @@ function inboxLoadPeerMeta(PDO $pdo, int $peerId): ?array
 
     return [
         'peer_id' => (int) $row['id'],
+        'username' => $row['username'],
         'name'    => inboxDisplayName($row['username'], $row['thong_tin_dinh_danh']),
         'avatar'  => inboxAvatar((int) $row['id']),
     ];
@@ -255,6 +257,7 @@ function inboxLoadConversations(PDO $pdo, int $currentUserId): array
         $list[] = [
             'id'               => (string) $convId,
             'peer_id'          => $peerId,
+            'username'         => $row['peer_username'],
             'name'             => inboxDisplayName($row['peer_username'], $row['peer_bio']),
             'avatar'           => inboxAvatar($peerId),
             'preview'          => $preview,
@@ -276,6 +279,7 @@ function inboxLoadChats(PDO $pdo, int $currentUserId): array
 
     foreach ($conversations as $conv) {
         $chats[$conv['id']] = [
+            'username' => $conv['username'],
             'name'     => $conv['name'],
             'avatar'   => $conv['avatar'],
             'peer_id'  => $conv['peer_id'],
@@ -369,8 +373,7 @@ function inboxLoadChats(PDO $pdo, int $currentUserId): array
 
 function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
 {
-    require_once __DIR__ . '/buddies_repository.php';
-
+    // Viết lại câu lệnh JOIN thuần túy, không phụ thuộc vào file buddies_repository.php để tránh lỗi PDO
     $stmt = $pdo->prepare(
         "SELECT
             peer.id AS peer_id,
@@ -392,31 +395,32 @@ function inboxLoadOnlineFriends(PDO $pdo, int $currentUserId): array
                 LIMIT 1
             ) AS conv_id
          FROM ban_cung_tien b
-         INNER JOIN (" . buddiesSqlUniqueAcceptedRelationIds() . ") uniq ON uniq.id = b.id
-         INNER JOIN users peer ON peer.id = CASE
-             WHEN b.user_id = :me2 THEN b.friend_user_id
-             ELSE b.user_id
-         END
+         INNER JOIN users peer ON (
+             (b.user_id = :me1 AND peer.id = b.friend_user_id) OR
+             (b.friend_user_id = :me2 AND peer.id = b.user_id)
+         )
          LEFT JOIN ho_so_ca_nhan h ON h.user_id = peer.id
-         WHERE peer.id <> :me3
+         WHERE b.status = 'Accepted'
          ORDER BY peer.is_online DESC, peer.username ASC
          LIMIT 12"
     );
+    
+    // Gán chính xác 3 tham số
     $stmt->execute([
         'me_conv' => $currentUserId,
-        'me'      => $currentUserId,
+        'me1'     => $currentUserId,
         'me2'     => $currentUserId,
-        'me3'     => $currentUserId,
     ]);
 
     $friends = [];
     foreach ($stmt->fetchAll() as $row) {
         $friends[] = [
-            'peer_id' => (int) $row['peer_id'],
-            'chat_id' => $row['conv_id'] !== null ? (string) (int) $row['conv_id'] : '',
-            'name'    => inboxDisplayName($row['username'], $row['thong_tin_dinh_danh']),
-            'avatar'  => inboxAvatar((int) $row['peer_id']),
-            'status'  => (int) $row['is_online'] === 1 ? 'online' : 'away',
+            'peer_id'  => (int) $row['peer_id'],
+            'chat_id'  => $row['conv_id'] !== null ? (string) (int) $row['conv_id'] : '',
+            'username' => $row['username'], // <--- THÊM KHÓA NÀY ĐỂ GIAO DIỆN NHẬN DIỆN
+            'name'     => inboxDisplayName($row['username'], $row['thong_tin_dinh_danh']),
+            'avatar'   => inboxAvatar((int) $row['peer_id']),
+            'status'   => (int) $row['is_online'] === 1 ? 'online' : 'away',
         ];
     }
 
@@ -455,6 +459,7 @@ function inboxStartChat(PDO $pdo, int $currentUserId, int $peerId): array
     return [
         'chat_id' => (string) $convId,
         'chat'    => [
+            'username' => $peer['username'],
             'name'     => $peer['name'],
             'avatar'   => $peer['avatar'],
             'peer_id'  => $peer['peer_id'],
@@ -462,6 +467,7 @@ function inboxStartChat(PDO $pdo, int $currentUserId, int $peerId): array
         ],
         'conversation' => [
             'id'               => (string) $convId,
+            'username'         => $peer['username'],
             'peer_id'          => $peer['peer_id'],
             'name'             => $peer['name'],
             'avatar'           => $peer['avatar'],

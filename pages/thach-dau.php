@@ -104,7 +104,7 @@ if (isset($_GET['get_user_info'])) {
                 'user' => [
                     'id' => $user['id'],
                     'username' => htmlspecialchars($user['username']),
-                    'avatar' => "https://i.pravatar.cc/150?img=" . (($user['id'] % 70) + 1),
+                    'avatar' => "../assets/img/default-avatar.jpg",
                     'status' => $status,
                     'xp' => $xp,
                     'level' => $level,
@@ -298,7 +298,7 @@ catch(PDOException $e)
                                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3 border-0 border-bottom hover-bg-light"
                                             onclick="showUserInfo(<?= $user['id'] ?>, this)">
                                         <div class="d-flex align-items-center gap-3">
-                                            <img src="https://i.pravatar.cc/150?img=<?= (($user['id'] % 70) + 1) ?>" class="rounded-circle border" width="40" height="40" alt="Avatar">
+                                            <img src="../assets/img/default-avatar.jpg" class="rounded-circle border" width="40" height="40" alt="Avatar">
                                             <div>
                                                 <h6 class="m-0 fw-bold text-dark"><?= htmlspecialchars($user['username']) ?></h6>
                                                 <small class="text-success d-flex align-items-center gap-1">
