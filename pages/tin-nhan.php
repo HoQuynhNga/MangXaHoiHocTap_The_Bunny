@@ -80,13 +80,12 @@ $shortcuts = [];
 
     <div class="layout-container">
       <aside class="sidebar-left" id="sidebarLeft">
-        <div class="user-mini d-none d-md-flex">
-          <img src="<?= htmlspecialchars($currentUser['avatar']) ?>" alt="<?= htmlspecialchars($currentUser['name']) ?>" width="44" height="44" />
-          <div>
-            <div class="name"><?= htmlspecialchars($currentUser['username']) ?></div>
-          </div>
-        </div>
-
+      <div class="user-mini d-none d-md-flex">
+  <img src="<?= htmlspecialchars($currentUser['avatar'] ?? $user_avatar) ?>" alt="<?= htmlspecialchars($currentUser['username'] ?? 'Tài khoản') ?>" width="44" height="44" />
+  <div>
+    <div class="name"><?= htmlspecialchars($currentUser['username'] ?? 'Tài khoản') ?></div>
+  </div>
+</div>
         <div class="nav-menu">
                 <a href="trang-chu.php" class="nav-item active"><i class="fa-solid fa-house"></i> Bảng tin</a>
                 <a href="hang-tho.php" class="nav-item"><i class="fa-solid fa-user-group"></i> Hang thỏ</a>
@@ -192,15 +191,6 @@ $shortcuts = [];
 
       <aside class="sidebar-right">
         <div class="card-bunny p-3 mb-3">
-          <div class="section-title">Xu hướng học tập</div>
-          <?php foreach ($trendingTags as $tag): ?>
-          <a href="#<?= htmlspecialchars($tag['anchor']) ?>" id="<?= htmlspecialchars($tag['anchor']) ?>" class="trending-tag">
-            <span class="hash"><?= htmlspecialchars($tag['tag']) ?></span>
-            <span class="count"><?= htmlspecialchars($tag['count']) ?></span>
-          </a>
-          <?php endforeach; ?>
-        </div>
-
         <div class="section-title ps-2 mb-2 d-flex justify-content-between align-items-center">
           <span>Bạn cùng tiến</span>
           <a href="ban-cung-tien.php" class="small text-primary fw-semibold">Quản lý</a>
@@ -239,11 +229,11 @@ $shortcuts = [];
       <a href="tin-nhan.php" class="nav-btn-mobile active">
         <i class="fa-brands fa-facebook-messenger"></i><span>Tin nhắn</span>
       </a>
-      <a href="<?= htmlspecialchars($currentUser['profile_url']) ?>" class="nav-btn-mobile"><i class="fa-solid fa-user"></i><span>Hồ sơ</span></a>
+      <a href="<?= htmlspecialchars($currentUser['profile_url'] ?? 'trang-ca-nhan.php?id=' . $currentUserId) ?>" class="nav-btn-mobile"><i class="fa-solid fa-user"></i><span>Hồ sơ</span></a>
     </div>
     <script> 
-        var CHATS = <?= json_encode($chats, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
-    </script>
+    var CHATS = <?= json_encode($chats ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+</script>
     <script src="../assets/js/tin-nhan.js"></script>
   </body>
 </html>
