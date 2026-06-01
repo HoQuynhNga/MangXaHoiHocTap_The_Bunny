@@ -573,16 +573,6 @@ try {
 </head>
 
 <body class="bg-light">
-
-    <?php if($message_notify != ""): ?>
-        <div class="alert alert-<?= htmlspecialchars($message_type); ?> alert-dismissible fade show text-center m-0 rounded-0 shadow-sm border-0 position-fixed w-100" style="top: 0; z-index: 9999;" role="alert" aria-live="assertive">
-            <i class="fa-solid <?= ($message_type == 'success') ? 'fa-check-circle' : 'fa-triangle-exclamation'; ?> me-2 fs-5 align-middle"></i>
-            <strong class="fs-6 align-middle">Thông báo:</strong> <span class="fs-6 align-middle"><?= htmlspecialchars($message_notify); ?></span>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng cảnh báo"></button>
-        </div>
-        <div style="height: 58px;"></div>
-    <?php endif; ?>
-
     <nav class="sticky-top" style="z-index: 1030;">
         <?php include '../includes/header.php'; ?>
     </nav>
