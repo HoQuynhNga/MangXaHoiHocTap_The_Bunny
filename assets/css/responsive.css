@@ -1,0 +1,420 @@
+/* =========================================================================================
+   ĐỒ ÁN MÔN HỌC: XÂY DỰNG WEBSITE MẠNG XÃ HỘI HỌC TẬP THE BUNNY
+   Tệp tin: responsive.css
+   ========================================================================================= */
+
+/* =========================================================================================
+   MỐC GIÁO DIỆN THIẾT BỊ LỚN & TRUNG BÌNH (TABLET & SMALL LAPTOP - DƯỚI 1024px / 992px)
+   ========================================================================================= */
+   @media (max-width: 1024px) {
+    /* 1. KHUNG BỐ CỤC CHUNG (Trang Chủ, Mạng Xã Hội) */
+    .layout-container {
+        max-width: 100%;
+        padding: 15px 12px;
+        gap: 16px;
+    }
+    
+    /* Ẩn thanh xu hướng/bạn bè trực tuyến bên phải để dồn không gian diện tích hiển thị */
+    .sidebar-right {
+        display: none !important;
+    }
+    
+    /* Mở rộng bảng tin chính ra tối đa để dễ đọc bài viết */
+    .feed-main {
+        max-width: 100% !important;
+        flex: 1;
+    }
+
+    /* 2. GIAO DIỆN ĐIỀU PHỐI QUẢN TRỊ (Admin Panel) */
+    .admin-shell {
+        flex-direction: column;
+    }
+    .admin-sidebar {
+        width: 100% !important;
+        height: auto !important;
+        position: static !important;
+        padding: 16px;
+    }
+    .admin-brand {
+        margin-bottom: 16px;
+        justify-content: center;
+    }
+    .admin-nav {
+        flex-direction: row !important;
+        flex-wrap: wrap;
+        gap: 8px;
+        overflow-y: visible !important;
+    }
+    .admin-nav__link {
+        padding: 8px 14px;
+        font-size: 0.88rem;
+    }
+    .admin-main {
+        padding: 16px 12px;
+    }
+    .admin-stat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+        gap: 12px;
+    }
+
+    /* 3. ĐẤU TRƯỜNG TRẮC NGHIỆM (Thách Đấu & Battle Room) */
+    #main-workspace {
+        height: auto !important;
+        overflow: visible !important;
+        flex-direction: column;
+    }
+    .mobile-stack-pane {
+        height: auto !important;
+        min-height: 400px;
+        margin-bottom: 16px;
+    }
+    .pane-content {
+        padding: 16px !important;
+    }
+    .room-toolbar {
+        flex-wrap: wrap;
+        padding: 12px 16px;
+        gap: 12px;
+        height: auto !important;
+    }
+}
+
+@media (max-width: 992px) {
+    /* 4. DIỄN ĐÀN THẢO LUẬN (Hang Thỏ) */
+    .content-right-panel {
+        padding: 16px !important;
+    }
+    .sidebar-left-panel {
+        height: auto !important;
+        position: static !important;
+        padding: 15px !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    /* 5. KHỐI THÔNG TIN TRÊN TRANG CÁ NHÂN */
+    .info-block {
+        padding: 20px !important;
+    }
+    .profile-layout {
+        gap: 20px;
+    }
+}
+
+/* =========================================================================================
+   MỐC GIÁO DIỆN THIẾT BỊ DI ĐỘNG (MOBILE - DƯỚI 768px)
+   ========================================================================================= */
+@media (max-width: 768px) {
+    /* 1. ĐỒNG BỘ THANH ĐIỀU HƯỚNG GỐC (Header Navbar) */
+    body {
+        padding-top: 56px !important; /* Hạ khoảng trống nền xuống tránh đè thanh điều hướng */
+    }
+    .navbar-bunny {
+        height: 56px !important;
+        padding: 0 16px !important;
+    }
+    /* Ẩn thanh tìm kiếm thủ công dầm dề trên di động */
+    .navbar-bunny .search-bar {
+        display: none !important;
+    }
+    /* Hiển thị nút menu hamburger để gọi ngăn kéo (Drawer) */
+    .menu-btn-mobile {
+        display: block !important;
+    }
+    .brand-logo {
+        font-size: 1.1rem;
+    }
+
+    /* 2. CHUYỂN ĐỔI SIDEBAR TRÁI THÀNH NGĂN KÉO VUỐT (Sliding Drawer Mobile) */
+    .sidebar-left {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 280px !important;
+        z-index: 2050 !important;
+        background: #ffffff !important;
+        height: 100vh !important;
+        padding: 24px 16px !important;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border-right: 1px solid #e5e7eb !important;
+        box-shadow: none;
+    }
+    /* Kích hoạt lớp phủ mở thanh Menu Sidebar */
+    .sidebar-left.open {
+        transform: translateX(0) !important;
+        box-shadow: 5px 0 25px rgba(0, 0, 0, 0.15) !important;
+    }
+    .mobile-overlay.show {
+        display: block !important;
+    }
+
+    /* 3. THANH ĐIỀU HƯỚNG ĐÁY MÀN HÌNH CHUẨN APP (Bottom Navigation) */
+    .bottom-nav {
+        display: flex !important;
+        justify-content: space-around;
+        align-items: center;
+        position: fixed !important;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid #e5e7eb;
+        z-index: 1000 !important;
+        padding-bottom: env(safe-area-inset-bottom);
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
+    }
+    .nav-btn-mobile {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        color: #6b7280;
+        background: none;
+        border: none;
+        flex: 1;
+        padding: 6px 0;
+        text-decoration: none;
+        font-family: inherit;
+    }
+    .nav-btn-mobile.active {
+        color: #7c3aed !important;
+        font-weight: 700;
+    }
+    .nav-btn-mobile i {
+        font-size: 1.2rem;
+    }
+    .nav-btn-mobile span {
+        font-size: 0.65rem;
+        font-weight: 600;
+    }
+    
+    /* Đẩy bài viết cuối cùng lên, tránh bị thanh bottom-nav đè mất chữ */
+    .feed-main {
+        margin-bottom: 65px !important;
+    }
+
+    /* 4. TRANG DANH SÁCH BẠN CÙNG TIẾN (Buddies Grid) */
+    .buddy-grid {
+        grid-template-columns: 1fr !important; /* Chuyển thành 1 cột dọc duy nhất */
+        gap: 12px;
+    }
+    .buddies-search-bar {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .buddies-search-bar input {
+        width: 100%;
+        padding: 10px 16px;
+    }
+    .buddies-search-bar button {
+        width: 100%;
+        padding: 10px 0;
+    }
+
+    /* 5. GIAO DIỆN HỘP THƯ TIN NHẮN CHUYÊN SÂU (Inbox & Chat Arena) */
+    .inbox-panel {
+        flex-direction: column !important;
+        min-height: calc(100vh - 140px) !important;
+    }
+    /* Danh sách người chat rút gọn chiều cao để chừa chỗ */
+    .inbox-panel__list {
+        width: 100% !important;
+        max-height: 240px !important;
+        border-right: none !important;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    .inbox-panel__empty {
+        min-height: 200px;
+        padding: 20px;
+    }
+    .inbox-panel__envelope {
+        width: 80px;
+        height: 80px;
+        font-size: 2.2rem;
+    }
+    
+    /* Thuật toán ẩn danh sách phòng khi kích hoạt chế độ mở khung chat di động */
+    .inbox-panel.inbox-panel--chat-open .inbox-panel__list {
+        display: none !important;
+    }
+    .inbox-panel.inbox-panel--chat-open .inbox-panel__conversation {
+        display: flex !important;
+        width: 100% !important;
+        height: calc(100vh - 140px) !important;
+    }
+    .inbox-chat__messages {
+        padding: 12px !important;
+    }
+    .inbox-chat__bubble-wrap {
+        max-width: 92% !important;
+    }
+
+    /* 6. TOÀN DIỆN DI ĐỘNG CHO TRANG CÁ NHÂN (User Profile) */
+    .cover-block {
+        height: 160px !important;
+        border-radius: 0 !important;
+        margin-top: 0 !important;
+    }
+    .btn-edit-cover {
+        padding: 4px 10px !important;
+        font-size: 11px !important;
+        bottom: 8px !important;
+        right: 8px !important;
+    }
+    .info-block {
+        margin: 0 !important;
+        border-radius: 0 !important;
+        padding: 16px 12px !important;
+        box-shadow: none !important;
+        border-bottom: 1px solid #e5e7eb;
+    }
+    /* Avatar chuyển ra chính giữa màn hình */
+    .profile-layout {
+        flex-direction: column !important;
+        align-items: center !important;
+        text-align: center !important;
+        gap: 12px !important;
+    }
+    .avatar-container {
+        margin-top: -65px !important;
+    }
+    .avatar-img {
+        width: 110px !important;
+        height: 110px !important;
+        border-width: 3px !important;
+    }
+    .status-badge {
+        width: 18px !important;
+        height: 18px !important;
+        border-width: 2px !important;
+        bottom: 6px;
+        right: 6px;
+    }
+    .profile-name-wrapper {
+        justify-content: center;
+    }
+    .profile-name {
+        font-size: 1.4rem !important;
+    }
+    .verified-tick {
+        font-size: 1.1rem !important;
+    }
+    /* Chỉ số thống kê (XP, bạn bè) co dãn */
+    .profile-stats {
+        justify-content: center !important;
+        flex-wrap: wrap;
+        gap: 12px 24px !important;
+        margin-top: 12px !important;
+    }
+    .stat-value {
+        font-size: 15px !important;
+    }
+    .stat-label {
+        font-size: 11px !important;
+    }
+    /* Hàng nút bấm cập nhật hồ sơ dàn đều */
+    .action-buttons {
+        width: 100% !important;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 12px;
+    }
+    .action-buttons .btn,
+    .action-buttons button {
+        flex: 1 !important;
+        min-width: 130px;
+        justify-content: center;
+        font-size: 13px !important;
+    }
+    /* Danh sách Tabs tài liệu, sự kiện vuốt ngang mượt mà */
+    .profile-tabs {
+        padding: 8px !important;
+        margin-top: 12px !important;
+        border-top: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        background: #ffffff;
+    }
+    .nav-link-custom {
+        padding: 8px 14px !important;
+        font-size: 13px !important;
+    }
+
+    /* Hộp lưới Heatmap rèn luyện bị tràn viền -> Bọc thanh cuộn ngang độc lập */
+    .heatmap-wrapper {
+        overflow-x: auto !important;
+        padding-bottom: 8px;
+        margin: 0 -12px;
+    }
+    .heatmap-container {
+        padding: 0 12px;
+        min-width: 520px !important; /* Giữ kích thước lưới không bị bóp méo */
+    }
+
+    /* Các thành phần soạn thảo bài viết */
+    .btn-action span, 
+    .btn-composer span {
+        display: none !important; /* Ẩn chữ tiếng Việt, chỉ để lại Icon trên Mobile để tiết kiệm không gian */
+    }
+    .post-composer img {
+        width: 34px !important;
+        height: 34px !important;
+    }
+    .composer-input {
+        padding: 8px 14px !important;
+        font-size: 13px !important;
+    }
+    .card-bunny {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    /* 7. TRANG THÔNG BÁO THU GỌN KHOẢNG CÁCH (Notifications) */
+    .notification-wrapper {
+        margin: 12px auto !important;
+        padding: 0 8px;
+    }
+    .notification-item {
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+    }
+    .avatar {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 18px !important;
+        margin-right: 10px !important;
+    }
+    .notification-title {
+        font-size: 14px !important;
+        line-height: 1.4;
+    }
+    .notification-time {
+        font-size: 11px !important;
+    }
+}
+
+/* =========================================================================================
+   MỐC TỐI ƯU HÓA CHO THIẾT BỊ MÀN HÌNH SIÊU NHỎ (SMALL MOBILE - DƯỚI 480px)
+   ========================================================================================= */
+@media (max-width: 480px) {
+    .profile-name {
+        font-size: 1.25rem !important;
+    }
+    .buddy-card__actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+    .buddy-card__actions .btn {
+        width: 100%;
+    }
+    .inbox-chat__send span {
+        display: none; /* Ẩn chữ "Gửi" trên màn hình siêu nhỏ, chỉ giữ lại icon máy bay giấy */
+    }
+    .inbox-chat__send {
+        padding: 10px 12px !important;
+    }
+}

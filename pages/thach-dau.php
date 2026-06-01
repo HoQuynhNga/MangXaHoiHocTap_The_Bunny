@@ -261,10 +261,11 @@ catch(PDOException $e)
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sân Đấu Thách Đấu - The Bunny</title>
+    <title>Thách đấu - The Bunny</title>
    
     <link href="../assets/css/root.css" rel="stylesheet">
     <link href="../assets/css/thach_dau.css" rel="stylesheet">
+    <link href="../assets/css/responsive.css" rel="stylesheet" />
     <script src="../assets/js/thach_dau.js"></script>
    
 </head>

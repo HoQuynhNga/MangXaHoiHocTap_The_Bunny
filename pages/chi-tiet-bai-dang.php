@@ -71,6 +71,7 @@ if ($post_id_url > 0) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/root.css">
     <link rel="stylesheet" href="../assets/css/trang-ca-nhan.css">
+    <link href="../assets/css/responsive.css" rel="stylesheet" />
     <style>
         .btn-interaction { background-color: transparent; border: none; font-weight: bold; color: #6c757d; border-radius: 8px; transition: all 0.2s; }
         .btn-interaction:hover { background-color: #f1f3f5; color: #495057; }

@@ -103,6 +103,7 @@ function renderBuddyCard(array $user, string $mode, ?int $relationId = null): vo
   <link href="../assets/css/root.css" rel="stylesheet" />
   <link href="../assets/css/trang-chu.css" rel="stylesheet" />
   <link href="../assets/css/ban-cung-tien.css" rel="stylesheet" />
+  <link href="../assets/css/responsive.css" rel="stylesheet" />
 </head>
 <body class="buddies-page">
   <div class="mobile-overlay" id="mobileOverlay" onclick="toggleSidebar()"></div>

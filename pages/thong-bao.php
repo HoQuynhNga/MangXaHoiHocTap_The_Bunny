@@ -243,6 +243,7 @@ function timeAgo($datetime)
         href="../assets/css/thong-bao.css"
         rel="stylesheet"
     >
+    <link href="../assets/css/responsive.css" rel="stylesheet" />
     <!-- Font Awesome    -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>

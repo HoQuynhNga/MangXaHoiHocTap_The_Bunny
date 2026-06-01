@@ -146,6 +146,7 @@ if(count($questions) == 0)
     <link href="../assets/css/root.css" rel="stylesheet">
     <link href="../assets/css/thach_dau.css" rel="stylesheet">
     <link href="../assets/css/battle_room.css" rel="stylesheet">
+    <link href="../assets/css/responsive.css" rel="stylesheet" />
 
     <script src="../assets/js/battle_room.js"></script>
 
