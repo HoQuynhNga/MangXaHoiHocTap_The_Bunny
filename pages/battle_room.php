@@ -154,33 +154,8 @@ if(count($questions) == 0)
 <body data-next-question="<?= $nextQuestionUrl ?>">
 
     <!-- 1. MAIN NAVBAR -->
-    <nav class="navbar-bunny d-flex align-items-center justify-content-between px-3 px-md-4">
-        <div class="d-flex align-items-center gap-4">
-            <a href="trang-chu.php" class="brand-logo text-decoration-none"><i class="fa-solid fa-carrot"></i> THE BUNNY</a>
-            <div class="search-bar d-none d-md-flex">
-                <i class="fa-solid fa-search text-muted"></i>
-                <input type="text" placeholder="Tìm kiếm tài liệu, bạn học..." />
-            </div>
-        </div>
-
-        <div class="d-flex align-items-center gap-3">
-            <a href="../thach-dau.php" class="btn-icon d-none d-md-flex text-decoration-none" title="Sàn đấu">
-                <i class="fa-solid fa-khanda"></i>
-            </a>
-            <a href="tin-nhan.php" class="btn-icon text-decoration-none" title="Tin nhắn">
-                <i class="fa-brands fa-facebook-messenger"></i>
-            </a>
-            <a href="../notifications.php" class="btn-icon text-decoration-none" title="Thông báo">
-                <i class="fa-solid fa-bell"></i>
-            </a>
-            <div class="d-flex align-items-center gap-2 bg-light px-3 py-1 rounded-pill border d-none d-md-flex">
-                <i class="fa-solid fa-fire text-danger"></i>
-                <span class="fw-bold fs-6">15</span>
-            </div>
-            <a href="trang-ca-nhan.php">
-                <img src="https://i.pravatar.cc/150?img=12" class="rounded-circle border cursor-pointer" width="40" height="40" alt="Profile">
-            </a>
-        </div>
+    <nav class="sticky-top" style="z-index: 1030;">
+        <?php include '../includes/header.php'; ?>
     </nav>
 
     <!-- 2. ROOM TOOLBAR -->

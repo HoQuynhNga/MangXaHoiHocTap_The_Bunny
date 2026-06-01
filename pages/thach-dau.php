@@ -276,51 +276,6 @@ catch(PDOException $e)
 <nav class="sticky-top" style="z-index: 1030;">
         <?php include '../includes/header.php'; ?>
     </nav>
-
-
-
-
-    <div class="room-toolbar">
-        <div class="d-flex align-items-center gap-2 gap-md-3">
-            <span class="fw-bold text-dark d-none d-sm-inline"><i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Phòng Practice #102</span>
-           
-            <button class="btn btn-light border fw-bold text-dark d-flex align-items-center gap-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#problemListCanvas">
-                <i class="fa-solid fa-list-ul text-primary"></i>
-                <span class="d-none d-sm-inline">Danh sách bài tập</span>
-            </button>
-        </div>
-
-
-
-
-        <div class="d-flex align-items-center gap-3 mt-2 mt-md-0">
-            <!-- HIDDEN: Avatar group and participant section -->
-            <div class="d-flex align-items-center gap-2 border-end pe-3 d-none d-lg-flex" style="display: none !important;">
-                <span class="small fw-bold text-muted">Đang tham gia:</span>
-                <div class="avatar-group d-flex">
-                    <img src="https://i.pravatar.cc/150?img=12" title="Alex (Bạn)" style="z-index: 3;">
-                    <img src="https://i.pravatar.cc/150?img=5" title="Minh Tuấn" style="z-index: 2;">
-                </div>
-            </div>
-
-
-
-
-            <div class="d-flex gap-2">
-                <!-- HIDDEN: "Mời bạn" button -->
-                <button class="btn btn-light fw-bold border text-dark" data-bs-toggle="modal" data-bs-target="#inviteModal" style="display: none !important;">
-                    <i class="fa-solid fa-user-plus me-1"></i><span class="d-none d-sm-inline"> Mời bạn</span>
-                </button>
-                <button class="btn btn-bunny" data-bs-toggle="modal" data-bs-target="#battleModal">
-                    <i class="fa-solid fa-bolt text-warning me-1"></i><span class="d-none d-sm-inline"> Thách đấu</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-
-
     <!-- 2-COLUMN TABLE WORKSPACE -->
     <main class="container-fluid flex-grow-1 p-3 overflow-hidden d-flex flex-column" id="main-workspace" style="height: calc(100vh - 128px); min-height: 450px;">
         <div class="row g-3 h-100 align-items-stretch">

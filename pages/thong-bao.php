@@ -239,72 +239,12 @@ function timeAgo($datetime)
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
         rel="stylesheet"
     >
-
-    <style>
-
-        body{
-            background:#f0f2f5;
-        }
-
-        .notification-wrapper{
-            max-width:800px;
-            margin:30px auto;
-        }
-
-        .notification-item{
-            background:#fff;
-            border-radius:12px;
-            padding:16px;
-            margin-bottom:12px;
-            display:flex;
-            align-items:center;
-            text-decoration:none;
-            color:#000;
-            transition:.2s;
-            border:1px solid #ddd;
-        }
-
-        .notification-item:hover{
-            background:#f5f5f5;
-            transform:translateY(-2px);
-        }
-
-        .avatar{
-            width:55px;
-            height:55px;
-            border-radius:50%;
-            background:#e4e6eb;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            font-size:24px;
-            margin-right:15px;
-            flex-shrink:0;
-        }
-
-        .notification-content{
-            flex:1;
-        }
-
-        .notification-title{
-            font-size:16px;
-            margin-bottom:4px;
-        }
-
-        .notification-time{
-            font-size:14px;
-            color:#65676B;
-        }
-
-        .empty-box{
-            background:#fff;
-            padding:50px;
-            border-radius:12px;
-            text-align:center;
-        }
-
-    </style>
-
+    <link
+        href="../assets/css/thong-bao.css"
+        rel="stylesheet"
+    >
+    <!-- Font Awesome    -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
