@@ -1008,9 +1008,9 @@ try {
     </a>
     
     <!-- Nút 2: Nhắn tin -->
-    <button class="btn btn-primary flex-fill fw-bold rounded-pill shadow-sm" title="Nhắn tin">
-        <i class="fa-solid fa-paper-plane"></i>
-    </button>
+    <a href="tin-nhan.php#chat-peer-<?= $buddy['id']; ?>" class="btn btn-primary flex-fill fw-bold rounded-pill shadow-sm" title="Nhắn tin">
+    <i class="fa-solid fa-paper-plane"></i>
+    </a>
     
     <!-- Nút 3: Xóa bạn -->
     <form method="POST" action="" class="m-0" onsubmit="return confirm('Bạn có chắc chắn muốn hủy kết nối học tập với người này?');">
@@ -1165,7 +1165,7 @@ try {
                     
                     <div class="modal-header bg-success text-white border-0 py-4 px-4">
                         <h4 class="modal-title fw-bold" id="addDocModalLabel">
-                            <i class="fa-solid fa-cloud-arrow-up me-2 fs-3 align-middle"></i> Khởi tạo Cổng Tải Học Liệu Lưu Trữ
+                            <i class="fa-solid fa-cloud-arrow-up me-2 fs-3 align-middle"></i> Thêm tài liệu mới
                         </h4>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng cửa sổ Upload File Bộ Nhớ"></button>
                     </div>
@@ -1173,7 +1173,7 @@ try {
                     <div class="modal-body p-4 bg-white">
                         
                         <div class="mb-4">
-                            <label class="form-label fw-bold text-dark fs-6">Định danh Tiêu đề Tài Liệu Lõi <span class="text-danger">*</span></label>
+                            <label class="form-label fw-bold text-dark fs-6">Định danh tiêu đề tài liệu<span class="text-danger">*</span></label>
                             <input 
                                 type="text" 
                                 class="form-control form-control-lg border-secondary-subtle fw-medium fs-6 rounded-3 shadow-sm" 
@@ -1194,19 +1194,15 @@ try {
                                 accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx" 
                                 required
                             >
-                            
-                            <div class="alert alert-info border-0 mt-4 text-start mb-0 small shadow-sm">
-                                <i class="fa-solid fa-shield-check text-primary fw-bold me-1 fs-5 align-middle"></i> <strong>Kiểm soát hệ thống mở khóa File System (100% Khả dụng):</strong> 
-                                Hệ thống bảo mật <code>move_uploaded_file()</code> thuộc lõi PHP đã được nạp tiến trình thành công. Các tệp tin được duyệt sẽ được máy chủ phân quyền rễ <code>chmod 0777</code> và cấp phát bộ nhớ vào thẳng thư mục Master <code>/DOAN/uploads/document/</code> của cấu trúc vật lý thực tế.
-                            </div>
+                        
                         </div>
                     </div>
                     
                     <div class="modal-footer border-0 py-3 px-4 bg-light justify-content-between">
                         <small class="text-muted fw-bold"><i class="fa-solid fa-server text-success"></i> Limit: MAX_FILE_SIZE = 10MB</small>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Hủy bỏ tiến trình</button>
-                            <button type="submit" class="btn btn-success fw-bold px-5 py-2 rounded-pill shadow-sm">Bắt đầu Streaming Dữ Liệu Lên</button>
+                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Hủy bỏ</button>
+                            <button type="submit" class="btn btn-success fw-bold px-5 py-2 rounded-pill shadow-sm">Tải tài liệu lên</button>
                         </div>
                     </div>
                 </div>
@@ -1244,7 +1240,7 @@ try {
                                 type="text" 
                                 class="form-control border-secondary-subtle py-2 px-3 fw-medium rounded-3 shadow-sm" 
                                 name="tieu_de" 
-                                placeholder="Ghi tiêu đề cực kỳ tường minh. VD: Giải Đề Thi Thử Toán Khối 12 Ban Tự Nhiên..." 
+                                placeholder="Tiêu đề..." 
                                 required
                             >
                         </div>
@@ -1262,20 +1258,14 @@ try {
                             </div>
                         </div>
                         
-                        <div class="alert alert-warning border-0 rounded-3 mb-0 d-flex align-items-start gap-3 small shadow-sm bg-warning bg-opacity-25">
-                            <i class="fa-solid fa-sitemap fs-4 mt-1 text-dark"></i>
-                            <div class="text-dark fw-medium">
-                                Tuân thủ thiết kế Relational Database, sau khi khởi tạo Object ảo trong Table <code>su_kien</code>, cấu trúc truy vấn vòng lặp Transaction của PHP sẽ tự động gọi Hàm khóa ngoại lấy ID của bạn Insert đè vào Table <code>thanh_vien_su_kien</code>, cấp quyền cho bạn trở thành Master Quản trị viên điều phối.
-                            </div>
-                        </div>
                         
                     </div>
                     
                     <div class="modal-footer border-top-0 py-4 px-4 bg-light justify-content-between">
-                        <small class="text-muted fw-bold"><i class="fa-solid fa-tower-broadcast text-warning"></i> Cáp truyền tải Broadcast Thông báo toàn lưới bạn bè</small>
+                        <small class="text-muted fw-bold"><i class="fa-solid fa-tower-broadcast text-warning"></i> Sự kiện thuộc mạng xã hội The Bunny</small>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Thoát bảng sự kiện</button>
-                            <button type="submit" class="btn btn-warning fw-bold px-5 py-2 rounded-pill shadow-sm text-dark">Kích hoạt lệnh Lên Lịch</button>
+                            <button type="button" class="btn btn-light fw-bold px-4 py-2 rounded-pill border shadow-sm" data-bs-dismiss="modal">Huỷ</button>
+                            <button type="submit" class="btn btn-warning fw-bold px-5 py-2 rounded-pill shadow-sm text-dark">Tạo sự kiện</button>
                         </div>
                     </div>
                 </div>
